@@ -10,19 +10,19 @@
 // 不同类型Json的创建
 
 /**
- * 创建Int类型的Json
+ * 创建LL类型的Json
  * 
  * @return - 如果创建失败, 返回NULL
  */
-flJson* flJsonInt_New(int i) {
+flJson* flJsonLL_New(long long ll) {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
     }
 
-    ret->type_ = flJsonTypeInt;
-    ret->refCout_ = 1;
-    ret->valInt_ = i;
+    ret->type_ = flJsonTypeLL;
+    ret->refCount_ = 1;
+    ret->valLL_ = ll;
 
     return ret;
 }
@@ -39,7 +39,7 @@ flJson* flJsonDouble_New(double d) {
     }
     
     ret->type_ = flJsonTypeDouble;
-    ret->refCout_ = 1;
+    ret->refCount_ = 1;
     ret->valDouble_ = d;
 
     return ret;
@@ -57,7 +57,7 @@ flJson* flJsonBool_New(bool b) {
     }
     
     ret->type_ = flJsonTypeBool;
-    ret->refCout_ = 1;
+    ret->refCount_ = 1;
     ret->valBool_ = b;
 
     return ret;
@@ -75,7 +75,7 @@ flJson* flJsonNull_New() {
     }
     
     ret->type_ = flJsonTypeNull;
-    ret->refCout_ = 1;
+    ret->refCount_ = 1;
 
     return ret;
 }
@@ -92,7 +92,7 @@ flJson* flJsonObject_New() {
     }
     
     ret->type_ = flJsonTypeObject;
-    ret->refCout_ = 1;
+    ret->refCount_ = 1;
 
     ret->valObject_.cap_ = 0;
     ret->valObject_.entrys_ = NULL;
@@ -115,7 +115,7 @@ flJson* flJsonArray_New() {
     }
     
     ret->type_ = flJsonTypeArray;
-    ret->refCout_ = 1;
+    ret->refCount_ = 1;
 
     ret->valArray_.array_ = NULL;
     ret->valArray_.cap_ = 0;
@@ -145,7 +145,7 @@ flJson* flJsonString_New(const char* s) {
     }
     
     ret->type_ = flJsonTypeString;
-    ret->refCout_ = 1;
+    ret->refCount_ = 1;
     ret->valString_ = new_s;
     
     return ret;
@@ -165,19 +165,19 @@ bool flJson_CheckType(flJson* j, flJsonType type) {
 
 
 
-// JsonInt的操作
+// JsonLL的操作
 
 /**
- * 获取Int型Json的内部数据
+ * 获取LL型Json的内部数据
  * 
  * @return - 如果类型错误返回NULL
  */
-int* flJsonInt_Get(flJson* ji) {
-    if(!flJson_CheckType(ji, flJsonTypeInt)) {
+long long* flJsonLL_Get(flJson* jll) {
+    if(!flJson_CheckType(jll, flJsonTypeLL)) {
         return NULL;
     }
 
-    return &(ji->valInt_);
+    return &(jll->valLL_);
 }
 
 // JsonDouble的操作
@@ -321,7 +321,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
     if (retCode != hm_arr_ret_suc) {
         return flRet_Error;
     } else {
-        j->refCout_++;
+        j->refCount_++;
         hm_arr__TO__flArray(&arr, ja);    // 转化
         return flRet_Suc;
     }
@@ -374,7 +374,7 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
     if (ret == NULL) {
         return NULL;
     } else {
-        ret->refCout_++;
+        ret->refCount_++;
         return ret;
     }
 }
@@ -439,13 +439,13 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
 
             tmp->val = j;
 
-            j->refCout_++;
+            j->refCount_++;
         }
 
 
     } else {
         // 正常插入
-        j->refCout_++;
+        j->refCount_++;
     }
     hm_map__TO__flObject(&map, jo);
     
@@ -499,7 +499,7 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
     if (ret == NULL) {
         return NULL;
     } else {
-        ret->refCout_++;
+        ret->refCount_++;
         return ret;
     }
 }
@@ -532,11 +532,11 @@ static void flObject_Free(flJson* jo) {
  * 对Json进行解引用
  */
 void flJson_UnRef(flJson* j) {
-    if (j->refCout_ == 0) return;
+    if (j->refCount_ == 0) return;
 
-    j->refCout_--;
+    j->refCount_--;
 
-    if (j->refCout_ == 0) {
+    if (j->refCount_ == 0) {
         // 只有string, object, array特殊处理
         switch (j->type_) {
             case flJsonTypeString: free(j->valString_);             break;

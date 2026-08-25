@@ -14,7 +14,7 @@ typedef struct flJson flJson;
 typedef enum flRet flRet;
 
 enum flJsonType {
-    flJsonTypeInt           = 1L << 0,          // 整型
+    flJsonTypeLL            = 1L << 0,          // 整型
     flJsonTypeDouble        = 1L << 1,          // 浮点型
     flJsonTypeString        = 1L << 2,          // 字符串型
     flJsonTypeNull          = 1L << 3,          // 空
@@ -34,7 +34,7 @@ enum flRet {
 struct flJson {
     flJsonType type_;        // json的类型标志
     union {
-        int valInt_;  
+        long long valLL_;  
         double valDouble_;
         char* valString_;    // 字符串时传入的时候会自动生成副本
         bool valBool_;
@@ -55,13 +55,13 @@ struct flJson {
             size_t cap_;
         } valObject_;
     };
-    size_t refCout_;         // 引用计数, 当为0时即是释放内存时机
+    size_t refCount_;         // 引用计数, 当为0时即是释放内存时机
 };
 
 
 // 不同类型Json的创建
 
-extern flJson* flJsonInt_New(int i);
+extern flJson* flJsonLL_New(long long ll);
 extern flJson* flJsonDouble_New(double d);
 extern flJson* flJsonBool_New(bool b);
 extern flJson* flJsonNull_New();
@@ -75,9 +75,9 @@ extern flJson* flJsonString_New(const char* s);
 extern bool flJson_CheckType(flJson* j, flJsonType type);
 
 
-// JsonInt的操作
+// JsonLL的操作
 
-extern int* flJsonInt_Get(flJson* ji);
+extern long long* flJsonLL_Get(flJson* jll);
 
 
 // JsonDouble的操作
