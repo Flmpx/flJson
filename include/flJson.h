@@ -10,12 +10,6 @@ typedef enum flJsonType flJsonType;
 // Json本体
 typedef struct flJson flJson;
 
-// Json数组
-typedef struct flArray flArray;
-
-// Json对象
-typedef struct flObject flObject;
-
 // 全局函数返回状态码
 typedef enum flRet flRet;
 
@@ -33,6 +27,7 @@ enum flJsonType {
 enum flRet {
     flRet_Suc,                  // 成功操作, 比如插入成功
     flRet_Error,                // 重大错误, 比如无法分配内存
+    flRet_Warn,                 // 警告, 比如类型错误
     flRet_None,                 // 操作无效, 比如删除不存在的键
 };
 
@@ -43,100 +38,78 @@ struct flJson {
         double valDouble_;
         char* valString_;    // 字符串时传入的时候会自动生成副本
         bool valBool_;
-        flArray* valArray_;
-        flObject* valObject_;
+
+        // Json数组
+        struct {
+            flJson** array_;        // 存着Json指针的数组
+            size_t size_;
+            size_t cap_;
+        } valArray_;
+
+        // Json对象
+        struct {    
+            // 只要记录这些的内存地址就行了, hmfocx会自行处理
+            void* entrys_;
+            int* status_;
+            size_t size_;
+            size_t cap_;
+        } valObject_;
     };
     size_t refCout_;         // 引用计数, 当为0时即是释放内存时机
 };
 
-struct flArray {
-    flJson** array_;        // 存着Json指针的数组
-    size_t size_;
-    size_t cap_;
 
-    size_t refCout_;         // 引用计数, 当为0时即是释放内存时机
-};
+// 不同类型Json的创建
 
-// Json对象中的条目(包含key和val)
-struct flObjectEntry {
-    char* key;                  // 键: 字符串
-    flJson* json;               // 值: json
-};
-
-// 在对象中条目的状态(和hmfocx中的相同)
-enum flObjectEntryStatus_ {
-    flExisted_,
-    flDel_,
-    flNone_,
-};
-
-struct flObject {
-    struct flObjectEntry* entrys_;
-    enum flObjectEntryStatus_* status_;
-    size_t size_;
-    size_t cap_;
-    size_t refCout_;         // 引用计数, 当为0时即是释放内存时机
-};
-
-/**
- * 创建新不同类型的Json
- */
-
-extern flJson* flJson_NewInt(int i);
-extern flJson* flJson_NewDouble(double d);
-extern flJson* flJson_NewBool(bool b);
-extern flJson* flJson_NewNull();
-extern flJson* flJson_NewObject(flObject* o);
-extern flJson* flJson_NewArray(flArray* a);
-extern flJson* flJson_NewString(const char* s);
+extern flJson* flJsonInt_New(int i);
+extern flJson* flJsonDouble_New(double d);
+extern flJson* flJsonBool_New(bool b);
+extern flJson* flJsonNull_New();
+extern flJson* flJsonObject_New();
+extern flJson* flJsonArray_New();
+extern flJson* flJsonString_New(const char* s);
 
 
-/**
- * 判断Json是不是某种类型
- */
+// Json类型的判断
+
 extern bool flJson_CheckType(flJson* j, flJsonType type);
 
-/**
- * 获取Json内部的数据
- * 可以通过返回的指针进行修改数据, 返回flArray* , flObject* 的会增加对应的容器内部的引用计数
- * 如果类型不对返回空指针
- */
+
+// JsonInt的操作
+
+extern int* flJsonInt_Get(flJson* ji);
 
 
-extern int* flJson_GetInt(flJson* j);
-extern double* flJson_GetDouble(flJson* j);
-extern char* flJson_GetString(flJson* j);
-extern flObject* flJson_GetObject(flJson* j);
-extern flArray* flJson_GetArray(flJson* j);
-extern bool* flJson_GetBool(flJson* j);
+// JsonDouble的操作
+
+extern double* flJsonDouble_Get(flJson* jd);
+
+// JsonBool的操作
+
+extern bool* flJsonBool_Get(flJson* jb);
+
+// JsonString的操作
+
+extern char* flJsonString_Get(flJson* js);
+
+// JsonArray的操作
+
+extern size_t flJsonArray_Size(flJson* ja);
+extern flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx);
+extern flJson* flJsonArray_Get(flJson* ja, size_t idx);
+extern flRet flJsonArray_Del(flJson* ja, size_t idx);
+
+// JsonObject的操作
+
+extern size_t flJsonObject_Size(flJson* jo);
+extern flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j);
+extern flJson* flJsonObject_Get(flJson* jo, const char* key);
+extern flRet flJsonObject_Del(flJson* jo, const char* key);
 
 
-/**
- * Array的相关操作(Get操作会让返回的Json引用加一)
- */
-
-extern flArray* flArray_New();
-extern flRet flArray_Add(flArray* a, flJson* j, size_t idx);
-extern flRet flArray_Del(flArray* a, size_t idx);
-extern flJson* flArray_Get(flArray* a, size_t idx);
-
-/**
- * Object的相关操作(Get操作会让返回的Json引用加一)
- */
-
-extern flObject* flObject_New();
-extern flRet flObject_Add(flObject* o, const char* key, flJson* j);
-extern flRet flObject_Del(flObject* o, const char* key);
-extern flJson* flObject_Get(flObject* o, const char* key);
-
-
-/**
- * Unref 解除引用
- */
+// Unref解引Json
 
 extern void flJson_UnRef(flJson* j);
-extern void flArray_UnRef(flArray* a);
-extern void flObject_UnRef(flObject* o);
 
 
 #endif

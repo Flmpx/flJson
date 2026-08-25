@@ -7,11 +7,14 @@
 #include <hm_arr.h>
 
 
-/**
- * 创建Json, 如果创建失败, 返回NULL
- */
+// 不同类型Json的创建
 
-flJson* flJson_NewInt(int i) {
+/**
+ * 创建Int类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonInt_New(int i) {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -24,7 +27,12 @@ flJson* flJson_NewInt(int i) {
     return ret;
 }
 
-flJson* flJson_NewDouble(double d) {
+/**
+ * 创建Double类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonDouble_New(double d) {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -37,7 +45,12 @@ flJson* flJson_NewDouble(double d) {
     return ret;
 }
 
-flJson* flJson_NewBool(bool b) {
+/**
+ * 创建Bool类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonBool_New(bool b) {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -50,7 +63,12 @@ flJson* flJson_NewBool(bool b) {
     return ret;
 }
 
-flJson* flJson_NewNull() {
+/**
+ * 创建Null类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonNull_New() {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -62,7 +80,12 @@ flJson* flJson_NewNull() {
     return ret;
 }
 
-flJson* flJson_NewObject(flObject* o) {
+/**
+ * 创建Object类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonObject_New() {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -70,15 +93,22 @@ flJson* flJson_NewObject(flObject* o) {
     
     ret->type_ = flJsonTypeObject;
     ret->refCout_ = 1;
-    ret->valObject_ = o;
 
-    o->refCout_++;
+    ret->valObject_.cap_ = 0;
+    ret->valObject_.entrys_ = NULL;
+    ret->valObject_.status_ = NULL;
+    ret->valObject_.size_ = 0;
 
     return ret;
     
 }
 
-flJson* flJson_NewArray(flArray* a) {
+/**
+ * 创建Array类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonArray_New() {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -86,15 +116,23 @@ flJson* flJson_NewArray(flArray* a) {
     
     ret->type_ = flJsonTypeArray;
     ret->refCout_ = 1;
-    ret->valArray_ = a;
 
-    a->refCout_++;
+    ret->valArray_.array_ = NULL;
+    ret->valArray_.cap_ = 0;
+    ret->valArray_.size_ = 0;
     
     return ret;
     
 }
 
-flJson* flJson_NewString(const char* s) {
+/**
+ * 创建String类型的Json
+ * 
+ * @note - 字符串会深拷贝
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonString_New(const char* s) {
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -113,73 +151,78 @@ flJson* flJson_NewString(const char* s) {
     return ret;
 }
 
+// Json类型的判断
 
 /**
- * 检测Json的类型, 如果不是该类型, 返回false
+ * 检测Json的类型
+ * 
+ * @return - 如果类型不匹配, 返回false
  */
-
 bool flJson_CheckType(flJson* j, flJsonType type) {
     return j->type_ & type;
 }
 
 
 
+
+// JsonInt的操作
+
 /**
- * 获取Json内部的数据
- * 可以通过返回的指针进行修改数据, 返回flArray* , flObject* 的会增加对应的容器内部的引用计数
- * 如果类型不对返回空指针
+ * 获取Int型Json的内部数据
+ * 
+ * @return - 如果类型错误返回NULL
  */
-
-int* flJson_GetInt(flJson* j) {
-    if(!flJson_CheckType(j, flJsonTypeInt)) {
+int* flJsonInt_Get(flJson* ji) {
+    if(!flJson_CheckType(ji, flJsonTypeInt)) {
         return NULL;
     }
 
-    return &(j->valInt_);
+    return &(ji->valInt_);
 }
 
-double* flJson_GetDouble(flJson* j) {
-    if(!flJson_CheckType(j, flJsonTypeDouble)) {
+// JsonDouble的操作
+
+/**
+ * 获取Double型Json的内部数据
+ * 
+ * @return - 如果类型错误返回NULL
+ */
+double* flJsonDouble_Get(flJson* jd) {
+    if(!flJson_CheckType(jd, flJsonTypeDouble)) {
         return NULL;
     }
 
-    return &(j->valDouble_);
+    return &(jd->valDouble_);
 }
 
-char* flJson_GetString(flJson* j) {
-    if(!flJson_CheckType(j, flJsonTypeString)) {
+// JsonString的操作
+
+/**
+ * 获取String型Json的内部数据
+ * 
+ * @return - 如果类型错误返回NULL
+ */
+char* flJsonString_Get(flJson* js) {
+    if(!flJson_CheckType(js, flJsonTypeString)) {
         return NULL;
     }
 
-    return j->valString_;
+    return js->valString_;
 }
 
-flObject* flJson_GetObject(flJson* j) {
-    if(!flJson_CheckType(j, flJsonTypeObject)) {
+// JsonBool的操作
+
+/**
+ * 获取Bool型Json的内部数据
+ * 
+ * @return - 如果类型错误返回NULL
+ */
+bool* flJsonBool_Get(flJson* jb) {
+    if(!flJson_CheckType(jb, flJsonTypeBool)) {
         return NULL;
     }
 
-    j->refCout_++;
-
-    return j->valObject_;
-}
-
-flArray* flJson_GetArray(flJson* j) {
-    if(!flJson_CheckType(j, flJsonTypeArray)) {
-        return NULL;
-    }
-    
-    j->refCout_++;
-    
-    return j->valArray_;
-}
-
-bool* flJson_GetBool(flJson* j) {
-    if(!flJson_CheckType(j, flJsonTypeBool)) {
-        return NULL;
-    }
-
-    return &(j->valBool_);
+    return &(jb->valBool_);
 }
 
 
@@ -187,6 +230,7 @@ bool* flJson_GetBool(flJson* j) {
  * 用于hm_map <-> flObject, hm_arr <-> flArray 之间的内容转化
  */
 
+// 对字符串进行hash
 static size_t hash_string(const char* str) {
     size_t res = 5381;
     int c;
@@ -196,78 +240,81 @@ static size_t hash_string(const char* str) {
     return res;
 }
 
-static void flObject__TO__hm_map(flObject* o, hm_map* m) {
-    m->buckets = (hm_map_entry*)o->entrys_;
-    m->buckets_status = (hm_map_entry_status*)o->status_;
+// 将Object的内部信息 --> hm_map
+static void flObject__TO__hm_map(flJson* jo, hm_map* m) {
+    m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
+    m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
     m->cmp_key = (hm_cmp)strcmp;
     m->free_key = (hm_free)free;
     m->free_val = (hm_free)flJson_UnRef;
     m->hash_key = (hm_hash)hash_string;
-    m->len = o->cap_;
-    m->size = o->size_;
+    m->len = jo->valObject_.cap_;
+    m->size = jo->valObject_.size_;
 }
 
-static void hm_map__TO__flObject(hm_map* m, flObject* o) {
-    o->cap_ = m->len;
-    o->size_ = m->size;
-    o->entrys_ = (struct flObjectEntry*)m->buckets;
-    o->status_ = (enum flObjectEntryStatus_*)m->buckets_status;
+// 将hm_map的内部信息 --> Object
+static void hm_map__TO__flObject(hm_map* m, flJson* jo) {
+    jo->valObject_.cap_ = m->len;
+    jo->valObject_.size_ = m->size;
+    jo->valObject_.entrys_ = (void*)m->buckets;
+    jo->valObject_.status_ = (int*)m->buckets_status;
 }
 
-static void flArray__TO__hm_arr(flArray* fa, hm_arr* ha) {
-    ha->capacity = fa->cap_;
-    ha->dynamic_grow = true;
-    ha->free_val = (hm_free)flJson_UnRef;
-    ha->size = fa->size_;
-    ha->vals = (void**)fa->array_;
+// 将Array的内部信息 --> hm_arr
+static void flArray__TO__hm_arr(flJson* ja, hm_arr* a) {
+    a->capacity = ja->valArray_.cap_;
+    a->dynamic_grow = true;
+    a->free_val = (hm_free)flJson_UnRef;
+    a->size = ja->valArray_.size_;
+    a->vals = (void**)ja->valArray_.array_;
 }
 
-static void hm_arr__TO__flArray(hm_arr* ha, flArray* fa) {
-    fa->array_ = (flJson**)ha->vals;
-    fa->cap_ = ha->capacity;
-    fa->size_ = ha->size;
+// 将hm_arr的内部信息 --> Array
+static void hm_arr__TO__flArray(hm_arr* a, flJson* ja) {
+    ja->valArray_.array_ = (flJson**)a->vals;
+    ja->valArray_.cap_ = a->capacity;
+    ja->valArray_.size_ = a->size;
 }
 
 
+
+// JsonArray的操作
 
 /**
- * Array的相关操作
- */
-
-
-/**
- * 创建一个数组
+ * 获取Array类型Json的大小
  * 
- * @return 如果创建失败返回NULL
+ * @return - 如果类型不对, 返回0
  */
-flArray* flArray_New() {
-    flArray* ret = (flArray*)malloc(sizeof(flArray));
-    if (ret == NULL) {
-        return NULL;
+size_t flJsonArray_Size(flJson* ja) {
+    if (!flJson_CheckType(ja, flJsonTypeArray)) {
+        return 0;
     }
 
-    ret->array_ = NULL;
-    ret->cap_ = 0;
-    ret->refCout_ = 1;
-    ret->size_ = 0;
-
-    return ret;
+    return ja->valArray_.size_;
 }
 
 /**
  * 在数组指定位置指定位置插入flJson
  * 
- * @note 如果待插入的位置大于数组的大小, 函数将自动校正为插入至尾部
+ * @note - 如果待插入的位置大于数组的大小, 函数将自动校正为插入至尾部
  * 
- * @return 如果插入失败, 返回flRet_Error, 成功则flRet_Suc
+ * @return - 如果插入成功, 返回flRet_Suc  
+ * @return - 如果插入失败, 返回flRet_Error  
+ * @return - 如果类型不对, 返回flRet_Warn  
+ * 
+ * @warning - 不可以将上级Json插入到下级Json中
  */
-flRet flArray_Add(flArray* a, flJson* j, size_t idx) {
-    size_t s = a->size_;
+flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
+    if (!flJson_CheckType(ja, flJsonTypeArray)) {
+        return flRet_Warn;
+    }
+
+    size_t s = ja->valArray_.size_;
     // 自动矫正
     idx = idx > s ? s : idx;
 
     hm_arr arr;
-    flArray__TO__hm_arr(a, &arr);       // 转化
+    flArray__TO__hm_arr(ja, &arr);       // 转化
 
     hm_arr_ret retCode = hm_arr_insert_index(&arr, j, idx);
 
@@ -275,25 +322,33 @@ flRet flArray_Add(flArray* a, flJson* j, size_t idx) {
         return flRet_Error;
     } else {
         j->refCout_++;
-        hm_arr__TO__flArray(&arr, a);    // 转化
+        hm_arr__TO__flArray(&arr, ja);    // 转化
+        return flRet_Suc;
     }
 }
 
 /**
  * 删除指定下标的flJson
  * 
- * @return 如果下标不合法, 那返回flRet_None, 否则flRet_Suc
+ * @return - 如果删除成功, 返回flRet_Suc
+ * @return - 如果下标不合法, 返回flRet_None
+ * @return - 如果类型不对, 返回flRet_Warn
  */
-flRet flArray_Del(flArray* a, size_t idx) {
-    if (idx > a->size_) {
+flRet flJsonArray_Del(flJson* ja, size_t idx) {
+    if (!flJson_CheckType(ja, flJsonTypeArray)) {
+        return flRet_Warn;
+    }
+
+    if (idx > ja->valArray_.size_) {
         return flRet_None;
     }
+
     hm_arr arr;
-    flArray__TO__hm_arr(a, &arr);
+    flArray__TO__hm_arr(ja, &arr);
 
     hm_arr_del_index(&arr, idx);
 
-    hm_arr__TO__flArray(&arr, a);
+    hm_arr__TO__flArray(&arr, ja);
 
     return flRet_Suc;
 }
@@ -301,13 +356,18 @@ flRet flArray_Del(flArray* a, size_t idx) {
 /**
  * 获取指定位置的flJson
  * 
- * @note 返回后flJson的引用次数加一, 使用完后使用对应的UnRef函数解引
+ * @note - 返回后flJson的引用次数加一, 使用完后使用flJson_UnRef函数解引
  * 
- * @return 如果下标不合法, 返回NULL
+ * @return - 如果下标不合法, 返回NULL
+ * @return - 如果类型不对, 返回NULL
  */
-flJson* flArray_Get(flArray* a, size_t idx) {
+flJson* flJsonArray_Get(flJson* ja, size_t idx) {
+    if (!flJson_CheckType(ja, flJsonTypeArray)) {
+        return NULL;
+    }
+
     hm_arr arr;
-    flArray__TO__hm_arr(a, &arr);
+    flArray__TO__hm_arr(ja, &arr);
 
     flJson* ret = hm_arr_get(&arr, idx);
 
@@ -322,40 +382,38 @@ flJson* flArray_Get(flArray* a, size_t idx) {
 
 
 
-/**
- * Object的相关操作
- */
+// JsonObject的操作
 
 
 /**
- * 创建一个对象
+ * 获取Object类型Json的大小
  * 
- * @return 如果创建失败返回NULL
+ * @return - 如果类型不对, 返回0
  */
-flObject* flObject_New() {
-    flObject* ret = (flObject*)malloc(sizeof(flObject));
-    if (ret == NULL) {
-        return NULL;
+size_t flJsonObject_Size(flJson* jo) {
+    if (!flJson_CheckType(jo, flJsonTypeObject)) {
+        return 0;
     }
-
-    ret->cap_ = 0;
-    ret->entrys_ = NULL;
-    ret->refCout_ = 1;
-    ret->size_ = 0;
-    ret->status_ = NULL;
-
-    return ret;
-}
+    
+    return jo->valObject_.size_;
+} 
 
 /**
- * 添加条目到对象中
+ * 添加条目(key和flJson)到对象中
  * 
- * @note 如果有重复键, 该函数直接替换掉flJson
- * @note 如果既是重复键, 同时插入的flJson的地址也和内部一样, 那这个函数等于什么也没做
+ * @note - 如果有重复键, 该函数直接替换掉flJson
+ * @note - 如果既是重复键, 同时插入的flJson的地址也和内部一样, 那这个函数等于什么也没做
  * 
- * @return 如果插入成功, 返回flRet_Suc, 如果插入失败, 返回
+ * @return - 如果插入成功, 返回flRet_Suc
+ * @return - 如果插入失败, 返回flRet_Error
+ * @return - 如果类型不对, 返回flRet_Warn
+ * 
+ * @warning - 不可以将上级Json插入到下级Json中
  */
-flRet flObject_Add(flObject* o, const char* key, flJson* j) {
+flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
+    if (!flJson_CheckType(jo, flJsonTypeObject)) {
+        return flRet_Warn;
+    }
 
     char* new_s = strdup(key);
     if (new_s == NULL) {
@@ -363,7 +421,7 @@ flRet flObject_Add(flObject* o, const char* key, flJson* j) {
     }
 
     hm_map map;
-    flObject__TO__hm_map(o, &map);
+    flObject__TO__hm_map(jo, &map);
 
     hm_map_ret retCode = hm_map_insert(&map, new_s, j);
 
@@ -389,20 +447,26 @@ flRet flObject_Add(flObject* o, const char* key, flJson* j) {
         // 正常插入
         j->refCout_++;
     }
-    hm_map__TO__flObject(&map, o);
+    hm_map__TO__flObject(&map, jo);
     
     return flRet_Suc;
 
 }
 
 /**
- * 删除对象中的条目
+ * 删除对象中的条目(key和flJson)
  * 
- * @return 如果键不存在, 返回flRet_None, 否则flRet_Suc
+ * @return - 如果删除成功, 返回flRet_Suc
+ * @return - 如果键不存在, 返回flRet_None
+ * @return - 如果类型不对, 返回flRet_Warn
  */
-flRet flObject_Del(flObject* o, const char* key) {
+flRet flJsonObject_Del(flJson* jo, const char* key) {
+    if (!flJson_CheckType(jo, flJsonTypeObject)) {
+        return flRet_Warn;
+    }
+
     hm_map map;
-    flObject__TO__hm_map(o, &map);
+    flObject__TO__hm_map(jo, &map);
 
     hm_map_ret retCode = hm_map_del(&map, (void*)key);
     
@@ -415,15 +479,20 @@ flRet flObject_Del(flObject* o, const char* key) {
 }
 
 /**
- * 获取对象中的指定键对应的Json
+ * 获取对象中的指定键对应的flJson
  * 
- * @note 返回后flJson的引用次数加一, 使用完后使用对应的对应的UnRef函数解引
+ * @note - 返回后flJson的引用次数加一, 使用完后使用flJson_UnRef函数解引
  * 
- * @return 如果键不存在, 返回NULL
+ * @return - 如果键不存在, 返回NULL
+ * @return - 如果类型不对, 返回NULL
  */
-flJson* flObject_Get(flObject* o, const char* key) {
+flJson* flJsonObject_Get(flJson* jo, const char* key) {
+    if (!flJson_CheckType(jo, flJsonTypeObject)) {
+        return NULL;
+    }
+
     hm_map map;
-    flObject__TO__hm_map(o, &map);
+    flObject__TO__hm_map(jo, &map);
 
     flJson* ret = hm_map_get(&map, (void*)key).val;
 
@@ -437,10 +506,31 @@ flJson* flObject_Get(flObject* o, const char* key) {
 
 
 
-/**
- * Unref 解除引用
- */
+// Unref解引Json
 
+// 释放掉Json中的Array, 等于直接调用hm_arr_free函数
+static void flArray_Free(flJson* ja) {
+
+    hm_arr arr;
+    flArray__TO__hm_arr(ja, &arr);
+
+    hm_arr_free(&arr);
+
+}
+
+// 释放掉Json中的Object, 等于直接调用hm_map_free函数
+static void flObject_Free(flJson* jo) {
+
+    hm_map map;
+    flObject__TO__hm_map(jo, &map);
+
+    hm_map_free(&map);
+    
+}
+
+/**
+ * 对Json进行解引用
+ */
 void flJson_UnRef(flJson* j) {
     if (j->refCout_ == 0) return;
 
@@ -450,40 +540,11 @@ void flJson_UnRef(flJson* j) {
         // 只有string, object, array特殊处理
         switch (j->type_) {
             case flJsonTypeString: free(j->valString_);             break;
-            case flJsonTypeObject: flObject_UnRef(j->valObject_);   break;
-            case flJsonTypeArray:  flArray_UnRef(j->valArray_);     break;
+            case flJsonTypeObject: flObject_Free(j);                break;
+            case flJsonTypeArray:  flArray_Free(j);                 break;
         }
         free(j);
     }
-    
-}
-void flArray_UnRef(flArray* a) {
-    if (a->refCout_ == 0) return;
 
-    a->refCout_--;
-
-    if (a->refCout_ == 0) {
-        hm_arr arr;
-        flArray__TO__hm_arr(a, &arr);
-
-        hm_arr_free(&arr);
-
-        free(a);
-    }
-    
-}
-void flObject_UnRef(flObject* o) {
-    if (o->refCout_ == 0) return;
-
-    o->refCout_--;
-    
-    if (o->refCout_ == 0) {
-        hm_map map;
-        flObject__TO__hm_map(o, &map);
-
-        hm_map_free(&map);
-
-        free(o);
-    }
     
 }
