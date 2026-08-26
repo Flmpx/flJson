@@ -112,4 +112,8 @@ extern flRet flJsonObject_Del(flJson* jo, const char* key);
 extern void flJson_UnRef(flJson* j);
 
 
+// 字符串 --> Json
+
+extern flJson* flJson_Parse(const char* str);
+
 #endif
