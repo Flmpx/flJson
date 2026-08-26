@@ -532,6 +532,7 @@ static void flObject_Free(flJson* jo) {
  * 对Json进行解引用
  */
 void flJson_UnRef(flJson* j) {
+    if (j == NULL) return;
     if (j->refCount_ == 0) return;
 
     j->refCount_--;
