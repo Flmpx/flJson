@@ -1,6 +1,7 @@
 #include "../include/flJson.h"
 #include <string.h>
 #include <ctype.h>
+#include <stdint.h>
 
 // 引入hm_str
 #include <hm_str.h>
@@ -20,6 +21,111 @@ static inline void ignoreSpace_(strStatus_* status_) {
     while (isspace(*(status_->now))) status_->now++;
 }
 
+// 16进制字符转为10进制, 若字符不合法, 返回-1
+static int hexToInt(char ch) {
+    if (ch >= '0' && ch <= '9') return ch - '0';
+    if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
+    if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
+
+    return -1;
+}
+
+// Unicode码点转UTF-8字节序列, 必须保证out字符串开始的时候全为 '\0', 返回写入的字符数
+static int codePointToUtf8(uint32_t cp, char* out) {
+
+    if (cp >= 0xD800 && cp <= 0xDFFF) {
+        return 0;
+    }
+
+    if (cp > 0x10FFFF) {
+        return 0;
+    }
+
+    if (cp <= 0x7F) {
+        out[0] = (char)cp;
+
+        return 1;
+    } else if (cp <= 0x7FF) {
+        out[0] = (char)(0xC0 | ((cp >> 6) & 0x1F));
+        out[1] = (char)(0x80 | (cp & 0x3F));
+
+        return 2;
+    } else if (cp <= 0xFFFF) {
+        out[0] = (char)(0xE0 | ((cp >> 12) & 0x0F));
+        out[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (char)(0x80 | (cp & 0x3F));
+
+        return 3;
+    } else if (cp <= 0x10FFFF) {
+        out[0] = (char)(0xF0 | ((cp >> 18) & 0x07));
+        out[1] = (char)(0x80 | ((cp >> 12) & 0x3F));
+        out[2] = (char)(0x80 | ((cp >> 6) & 0x3F));
+        out[3] = (char)(0x80 | (cp & 0x3F));
+
+        return 4;
+    }
+
+}
+
+// 解析字符串中的Unicode码点, 需要保证in全是 '\0', 解析出错返回NULL, 正确就返回in本身
+static char* ParseUnicode_(strStatus_* status_, char* in) {
+    // 由于是在字符串里面, 不可以跳过空白字符
+
+    strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
+
+    if (*statusTmp_.now == '\0') return NULL;
+
+    if (*statusTmp_.now++ != '\\') return NULL;
+
+    if (*statusTmp_.now++ != 'u') return NULL;
+
+    uint32_t codePoint = 0;
+
+    for (int i = 0; i < 4; i++) {
+        int v = hexToInt(*statusTmp_.now++);
+        if (v == -1) {
+            return NULL;
+        }
+        codePoint = (codePoint << 4) | v; 
+    }
+
+    if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
+
+        // 必须有低位, 后面必须跟一个\u
+
+        if (*statusTmp_.now++ != '\\') return NULL;
+
+        if (*statusTmp_.now++ != 'u') return NULL;
+
+        uint32_t low = 0;
+
+        for (int i = 0; i < 4; i++) {
+            int v = hexToInt(*statusTmp_.now++);
+            if (v == -1) {
+                return NULL;
+            }
+            low = (low << 4) | v; 
+        }
+
+        if (!(low >= 0xDC00 && low <= 0xDFFF)) {
+            return NULL;
+        }
+
+        codePoint = 0x10000 + ((codePoint - 0xD800) << 10) + (low - 0xDC00);
+
+    } else if (codePoint >= 0xDC00 && codePoint <= 0xDFFF) {
+        return NULL;
+    }
+
+    if (codePointToUtf8(codePoint, in) <= 0) {
+        return NULL;
+    }
+
+    status_->now = statusTmp_.now;
+    
+    return in;
+
+}
 
 // 解析字符串, 异常返回NULL
 static char* parseStr_(strStatus_* status_) {
@@ -36,9 +142,10 @@ static char* parseStr_(strStatus_* status_) {
         return NULL;
     }
 
-    char tmp[2] = "#";
+    char tmp[5] = "5201";       // 转码最多4个字节
 
     while (*statusTmp_.now != '\"') {
+        memset(tmp, 0, sizeof(tmp));
         if (*statusTmp_.now == '\0') {
             hm_str_free(&str);
             return NULL;
@@ -55,6 +162,12 @@ static char* parseStr_(strStatus_* status_) {
                 case '\"':  tmp[0] = '\"'; break;
                 case '\\':  tmp[0] = '\\'; break;
                 case 'u':
+                    statusTmp_.now--;       // 退回到\, 函数parseUnicode_会检查
+                    if (ParseUnicode_(&statusTmp_, tmp) == NULL) {
+                        hm_str_free(&str);
+                        return NULL;
+                    }
+                break;
                 default:
                     hm_str_free(&str);
                     return NULL;
