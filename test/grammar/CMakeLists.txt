@@ -25,7 +25,7 @@ add_executable(${flJSON_TARGET}_Exe "${${flJSON_TARGET}_SRC}" "${${flJSON_TARGET
 target_link_libraries(${flJSON_TARGET}_Exe PRIVATE flJson)
 
 # SOURCE_HEAD_PATH 宏为当前flJson/test/grammar/目录的绝对路径
-target_compile_definitions(${flJSON_TARGET}_Exe PRIVATE SOURCE_HEAD_PATH="${${flJSON_TARGET}_DATA_SRC_DIR}")
+target_compile_definitions(${flJSON_TARGET}_Exe PRIVATE SOURCE_HEAD_PATH="${${flJSON_TARGET}_DATA_SRC_DIR}/")
 
 # 测试
 add_test(NAME ${flJSON_TARGET}_Exe COMMAND ${flJSON_TARGET}_Exe)

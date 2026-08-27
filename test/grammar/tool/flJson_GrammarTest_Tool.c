@@ -57,12 +57,12 @@ void TEST_CHECK_JSON_CORRECTNESS(FL_TAG expect, const char* jsonSrcDir) {
     size_t headDirSize = strlen(SOURCE_HEAD_PATH);       // FLJSON_SOURCE_HEAD_PATH 是当前整个项目的test/文件夹的绝对路径
     size_t tailDirSize = strlen(jsonSrcDir);
     char realJsonSrcDir[headDirSize + tailDirSize + 1];
-    sprintf(realJsonSrcDir, "test/%s", jsonSrcDir);
+    sprintf(realJsonSrcDir,  SOURCE_HEAD_PATH "%s", jsonSrcDir);
     
     // 打开文件
-    FILE* jsonFile = fopen(jsonSrcDir, "rb");
+    FILE* jsonFile = fopen(realJsonSrcDir, "rb");
     if (jsonFile == NULL) {
-        PRINT_OPENFILE_FAIL(jsonSrcDir);
+        PRINT_OPENFILE_FAIL(realJsonSrcDir);
         return;
     }
 

@@ -11,7 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FetchContent_Declare(
     hmfocx
-    GIT_REPOSITORY git@github.com:Flmpx/hmfocx.git
+    GIT_REPOSITORY https://github.com/Flmpx/hmfocx.git
     GIT_TAG v0.13.0
 )
 

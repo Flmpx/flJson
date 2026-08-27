@@ -9,11 +9,12 @@ static void TEST_JSON_FROM_JSONTestSuite() {
     struct dirent* entry;
 
     // SOURCE_HEAD_PATH 
-    const char* Head = SOURCE_HEAD_PATH "JSONTestSuite/test_parsing/";
+    dir = opendir(SOURCE_HEAD_PATH "JSONTestSuite/test_parsing/");
+    
+    const char* Head = "JSONTestSuite/test_parsing/";
     size_t HeadDirSize = strlen(Head);
-    dir = opendir(Head);
     if (dir == NULL) {
-        printf("Can't Open " SOURCE_HEAD_PATH "JSONTestSuite/test_parsing/\n");
+        printf("Can't Open JSONTestSuite/test_parsing/\n");
         return;
     }
     while ((entry = readdir(dir)) != NULL) {
@@ -34,6 +35,7 @@ static void TEST_JSON_FROM_JSONTestSuite() {
         }
         TEST_CHECK_JSON_CORRECTNESS(expect, jsonSrcDir);
     } 
+    closedir(dir);
 
 }
 
