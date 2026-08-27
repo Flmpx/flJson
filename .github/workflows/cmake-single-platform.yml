@@ -1,0 +1,31 @@
+name: Test for flJson
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  flJson_GrammarTest:
+    # 语法测试
+    name: flJson_GrammarTest😆
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON     # 使用BUILD_TEST=ON开启测试
+
+    - name: Build       
+      run: cmake --build ${{github.workspace}}/bin --target flJson_GrammarTest_Exe --config ${{env.BUILD_TYPE}}
+
+    - name: Test Json Grammar
+      working-directory: ${{github.workspace}}/bin
+      run: ctest -C ${{env.BUILD_TYPE}} -R flJson_GrammarTest_Exe -V        # 需要展示详情
