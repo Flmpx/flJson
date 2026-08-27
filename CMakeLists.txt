@@ -27,6 +27,13 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 add_library(flJson STATIC ${FL_SRC_SOURCE_LIST})
 
 # 只在c文件中使用hmfocx的东西
-target_link_libraries(flJson PRIVATE hmfocx)
+target_link_libraries(flJson PUBLIC hmfocx)
 
-target_include_directories(flJson PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(flJson PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+option(BUILD_TEST "Run all flJsonTest" OFF)
+
+if (BUILD_TEST) 
+    enable_testing()
+    add_subdirectory(test/grammar)
+endif()
