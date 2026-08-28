@@ -2,7 +2,10 @@
 #define FLJSON_GRAMMARTEST_TOOL_H
 
 // 总失败次数
-extern int FLJSONTEST_FAIL_CNT;
+extern int FLJSON_GRAMMARTEST_FAIL_CNT;
+
+// 总成功次数
+extern int FLJSON_GRAMMARTEST_SUC_CNT;
 
 // 对还是错
 typedef enum FL_TAG {

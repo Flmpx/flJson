@@ -3,7 +3,8 @@
 #include <flJson.h>
 #include "flJson_GrammarTest_Tool.h"
 
-int FLJSONTEST_FAIL_CNT = 0;
+int FLJSON_GRAMMARTEST_FAIL_CNT = 0;
+int FLJSON_GRAMMARTEST_SUC_CNT = 0;
 
 // 颜色
 #define COLOR_RESET   "\033[0m"
@@ -42,9 +43,10 @@ static void PRINT_CHECK_JSON_RESULT(FL_TAG expect, FL_TAG real, const char* json
     printf(" --- ");
     if (expect & real) {
         printf(COLOR_GREEN);
+        FLJSON_GRAMMARTEST_SUC_CNT++;
     } else {
         printf(COLOR_RED);
-        FLJSONTEST_FAIL_CNT++;
+        FLJSON_GRAMMARTEST_FAIL_CNT++;
     }
     printf("%s\n", jsonSrcDir);
     printf(COLOR_RESET);

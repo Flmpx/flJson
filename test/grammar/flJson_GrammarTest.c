@@ -45,5 +45,7 @@ int main()
 {
     TEST_JSON_FROM_JSONTestSuite();
 
-    return FLJSONTEST_FAIL_CNT;
+    // 打印总结果
+    printf("****All: %d,  Passed: %d,  Failed: %d.****\n", FLJSON_GRAMMARTEST_SUC_CNT + FLJSON_GRAMMARTEST_FAIL_CNT, FLJSON_GRAMMARTEST_SUC_CNT, FLJSON_GRAMMARTEST_FAIL_CNT);
+    return FLJSON_GRAMMARTEST_FAIL_CNT;
 }
