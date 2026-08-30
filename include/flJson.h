@@ -115,5 +115,6 @@ extern void flJson_UnRef(flJson* j);
 // 字符串 --> Json
 
 extern flJson* flJson_Parse(const char* str);
+extern flJson* flJson_ParseWithLength(const char* str, size_t len);
 
 #endif

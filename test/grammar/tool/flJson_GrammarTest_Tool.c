@@ -80,7 +80,7 @@ void TEST_CHECK_JSON_CORRECTNESS(FL_TAG expect, const char* jsonSrcDir) {
     jsonStr[jsonFileSize] = '\0';
     
     // 解析json字符串
-    flJson* root = flJson_Parse(jsonStr);
+    flJson* root = flJson_ParseWithLength(jsonStr, jsonFileSize);
     PRINT_CHECK_JSON_RESULT(expect, root == NULL ? FL_NO : FL_YES, jsonSrcDir);
     
     // 清理资源

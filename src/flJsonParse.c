@@ -8,9 +8,9 @@
 
 static const int recusive_max_depth = 256;
 
-// 当前带解析字符串的状态, head为头指针, now为当前指向
+// 当前带解析字符串的状态, tail为尾指针, now为当前指向
 typedef struct strStatus_ {
-    const char* const head;
+    const char* const tail;
     const char* now;
 } strStatus_;
 
@@ -19,7 +19,7 @@ static flJson* flJson_Parse_(strStatus_* status_, int depth);
 
 // 忽略空白字符
 static inline void ignoreSpace_(strStatus_* status_) {
-    while (*(status_->now) == '\n' || *(status_->now) == '\t' || *(status_->now) == '\n' || *(status_->now) == ' ') status_->now++;
+    while (status_->now < status_->tail && (*(status_->now) == '\n' || *(status_->now) == '\t' || *(status_->now) == '\n' || *(status_->now) == ' ')) status_->now++;
 }
 
 // 16进制字符转为10进制, 若字符不合法, 返回-1
@@ -88,7 +88,7 @@ static char* ParseUnicode_(strStatus_* status_, char* in, int depth) {
 
     strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
 
-    if (*statusTmp_.now == '\0') return NULL;
+    if (statusTmp_.now + 6 > statusTmp_.tail) return NULL;
 
     if (*statusTmp_.now++ != '\\') return NULL;
 
@@ -107,6 +107,8 @@ static char* ParseUnicode_(strStatus_* status_, char* in, int depth) {
     if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
 
         // 必须有低位, 后面必须跟一个\u
+
+        if (statusTmp_.now + 6 > statusTmp_.tail) return NULL;
 
         if (*statusTmp_.now++ != '\\') return NULL;
 
@@ -153,7 +155,7 @@ static char* parseStr_(strStatus_* status_, int depth) {
 
     strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
 
-    if (*statusTmp_.now == '\0') return NULL;
+    if (statusTmp_.now >= statusTmp_.tail) return NULL;
 
     if (*statusTmp_.now++ != '\"') return NULL;
 
@@ -171,6 +173,10 @@ static char* parseStr_(strStatus_* status_, int depth) {
             return NULL;
         }
         if (*statusTmp_.now == '\\') {
+            if (statusTmp_.now >= statusTmp_.tail) {
+                hm_str_free(&str);
+                return NULL;
+            }
             statusTmp_.now++;
             switch (*statusTmp_.now) {
                 // 暂时不支持\u
@@ -201,9 +207,17 @@ static char* parseStr_(strStatus_* status_, int depth) {
             hm_str_free(&str);
             return NULL;
         }
+        if (statusTmp_.now >= statusTmp_.tail) {
+            hm_str_free(&str);
+            return NULL;
+        }
         statusTmp_.now++;
     }
 
+    if (statusTmp_.now >= statusTmp_.tail) {
+        hm_str_free(&str);
+        return NULL;
+    }
     statusTmp_.now++;
     status_->now = statusTmp_.now;
 
@@ -223,14 +237,15 @@ static flJson* flJsonLL_Parse_(strStatus_* status_, int depth) {
     ignoreSpace_(status_);
     const char* now = status_->now;
 
-    if (*now == '\0') return NULL;      // 提前判空
+    if (now >= status_->tail) return NULL;
 
     // 前导判断
     const char* tmp = now;
     if (*tmp == '-') tmp++;     // 为负号, 跳过
+    if (tmp >= status_->tail) return NULL;
     if (*tmp >= '0' && *tmp <= '9') {
         // 防止前导0, 比如 `-01`, `001`, `00`
-        if (*tmp == '0' && *(tmp + 1) >= '0' && *(tmp + 1) <= '9') {
+        if (*tmp == '0' && tmp + 1 < status_->tail && *(tmp + 1) >= '0' && *(tmp + 1) <= '9') {
             return NULL;
         }
 
@@ -242,6 +257,8 @@ static flJson* flJsonLL_Parse_(strStatus_* status_, int depth) {
     char* end = NULL;
 
     long long valLL_ = strtoll(status_->now, &end, 10);
+
+    if (end > status_->tail) return NULL;
 
     flJson* ret = flJsonLL_New(valLL_);
     
@@ -267,14 +284,15 @@ static flJson* flJsonDouble_Parse_(strStatus_* status_, int depth) {
     ignoreSpace_(status_);
     const char* now = status_->now;
 
-    if (*now == '\0') return NULL;      // 提前判空
+    if (now >= status_->tail) return NULL;
 
     // 前导判断
     const char* tmp = now;
     if (*tmp == '-') tmp++;     // 为负号, 跳过
+    if (tmp >= status_->tail) return NULL;
     if (*tmp >= '0' && *tmp <= '9') {
         // 防止前导0, 比如 `-01`, `001`, `00`
-        if (*tmp == '0' && *(tmp + 1) >= '0' && *(tmp + 1) <= '9') {
+        if (*tmp == '0' && tmp + 1 < status_->tail && *(tmp + 1) >= '0' && *(tmp + 1) <= '9') {
             return NULL;
         }
 
@@ -284,16 +302,20 @@ static flJson* flJsonDouble_Parse_(strStatus_* status_, int depth) {
     }
 
     // 判断.后面必须是数字以及e/E后哦吗必须有至少一个数字(可以有+-)
-    while (*tmp != '\0' && strchr("1234567890-+eE.", *tmp) != NULL) {
+    while (tmp < status_->tail && *tmp != '\0' && strchr("1234567890-+eE.", *tmp) != NULL) {
         if (*tmp == '.') {
             tmp++;
+            if (tmp >= status_->tail) return NULL;
             // 小数点后面必须要有数
             if (!(*tmp >= '0' && *tmp <= '9')) {
                 return NULL;
             }
         } else if (*tmp == 'e' || *tmp == 'E') {
             tmp++;
+            if (tmp >= status_->tail) return NULL;
             if (*tmp == '+' || *tmp == '-') tmp++;
+            if (tmp >= status_->tail) return NULL;
+
             
             // e/E(+-)后面必须要有数
             if (!(*tmp >= '0' && *tmp <= '9')) {
@@ -305,6 +327,8 @@ static flJson* flJsonDouble_Parse_(strStatus_* status_, int depth) {
 
     char* end = NULL;
     double valDouble_ = strtod(status_->now, &end);
+
+    if (end > status_->tail) return NULL;
 
     flJson* ret = flJsonDouble_New(valDouble_);
     if (ret == NULL) {
@@ -330,7 +354,7 @@ static flJson* flJsonString_Parse_(strStatus_* status_, int depth) {
     strStatus_ statusTmp_ = *status_;
     const char* now = status_->now;
     
-    if (*now == '\0') return NULL;
+    if (now >= status_->tail) return NULL;
     
     char* str = parseStr_(&statusTmp_, depth);
 
@@ -365,7 +389,7 @@ static flJson* flJsonNull_Parse_(strStatus_* status_, int depth) {
     ignoreSpace_(status_);
     const char* now = status_->now;
 
-    if (*now == '\0') return NULL;
+    if(now + 4 > status_->tail) return NULL;
 
     int cmpRes = strncmp(now, "null", 4);
 
@@ -397,10 +421,15 @@ static flJson* flJsonBool_Parse_(strStatus_* status_, int depth) {
     ignoreSpace_(status_);
     const char* now = status_->now;
 
-    if (*now == '\0') return NULL;
-
+    if (now + 4 > status_->tail) return NULL;
     int cmpRes_1 = strncmp(now, "true", 4);
-    int cmpRes_2 = strncmp(now, "false", 5);
+    int cmpRes_2 = 0;
+    if (now + 5 > status_->tail) {
+        cmpRes_2 = 1;
+    } else {
+        cmpRes_2 = strncmp(now, "false", 5);
+    }
+
 
     flJson* ret = NULL;
     if (cmpRes_1 == 0) {
@@ -432,7 +461,7 @@ static flJson* flJsonObject_Parse_(strStatus_* status_, int depth) {
     ignoreSpace_(status_);
     strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
 
-    if (*statusTmp_.now == '\0') return NULL;
+    if (statusTmp_.now + 2 > statusTmp_.tail) return NULL;
 
     if (*statusTmp_.now++ != '{') return NULL;
 
@@ -442,6 +471,10 @@ static flJson* flJsonObject_Parse_(strStatus_* status_, int depth) {
     }
 
     ignoreSpace_(&statusTmp_);
+    if (statusTmp_.now >= statusTmp_.tail) {
+        flJson_UnRef(obj);
+        return NULL;
+    }
     if (*statusTmp_.now == '}') {
         // 空object
         statusTmp_.now++;
@@ -459,6 +492,10 @@ static flJson* flJsonObject_Parse_(strStatus_* status_, int depth) {
         }
 
         ignoreSpace_(&statusTmp_);
+        if (statusTmp_.now >= statusTmp_.tail) {
+            flJson_UnRef(obj);
+            return NULL;
+        }
         if(*statusTmp_.now != ':') {
             free(key);
             flagError = true;
@@ -486,10 +523,18 @@ static flJson* flJsonObject_Parse_(strStatus_* status_, int depth) {
             break;
         }
         ignoreSpace_(&statusTmp_);
+        if (statusTmp_.now >= statusTmp_.tail) {
+            flJson_UnRef(obj);
+            return NULL;
+        }
     } while (*statusTmp_.now == ',' && statusTmp_.now++);   // 如果是逗号, 则跳过, 如果不是, 那个statusTmp_.now是不会加的
 
     ignoreSpace_(&statusTmp_);
     
+    if (statusTmp_.now >= statusTmp_.tail) {
+        flJson_UnRef(obj);
+        return NULL;
+    }
     if (flagError || *statusTmp_.now != '}') {
         flJson_UnRef(obj);
         return NULL;
@@ -513,7 +558,7 @@ static flJson* flJsonArray_Parse_(strStatus_* status_, int depth) {
     ignoreSpace_(status_);
     strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
 
-    if (*statusTmp_.now == '\0') return NULL;
+    if(statusTmp_.now + 2 > statusTmp_.tail) return NULL;
 
     if (*statusTmp_.now++ != '[') return NULL;
 
@@ -523,6 +568,10 @@ static flJson* flJsonArray_Parse_(strStatus_* status_, int depth) {
     }
 
     ignoreSpace_(&statusTmp_);
+    if (statusTmp_.now >= statusTmp_.tail) {
+        flJson_UnRef(arr);
+        return NULL;
+    }
     if (*statusTmp_.now == ']') {
         // 空object
         statusTmp_.now++;
@@ -548,9 +597,18 @@ static flJson* flJsonArray_Parse_(strStatus_* status_, int depth) {
             break;
         }
         ignoreSpace_(&statusTmp_);
+        if (statusTmp_.now >= statusTmp_.tail) {
+            flJson_UnRef(arr);
+            return NULL;
+        }
     } while (*statusTmp_.now == ',' && statusTmp_.now++);   // 如果是逗号, 则跳过, 如果不是, 那个statusTmp_.now是不会加的
     
     ignoreSpace_(&statusTmp_);
+
+    if (statusTmp_.now >= statusTmp_.tail) {
+        flJson_UnRef(arr);
+        return NULL;
+    }
 
     if (flagError || *statusTmp_.now != ']') {
         flJson_UnRef(arr);
@@ -574,6 +632,11 @@ static flJson* flJson_Parse_(strStatus_* status_, int depth) {
 
     ignoreSpace_(status_);
     const char* now = status_->now;
+
+    if (now >= status_->tail) {
+        return NULL;
+    }
+
     char headCh = *now;
 
     if (headCh == '\0') return NULL;      // 提前判空
@@ -582,7 +645,7 @@ static flJson* flJson_Parse_(strStatus_* status_, int depth) {
         
         bool doubleFlag = false;
         // 判断是否位浮点数
-        for (const char* tmp = now; *tmp != '\0' && strchr("1234567890-+eE.", *tmp) != NULL; tmp++) {
+        for (const char* tmp = now; tmp < status_->tail && *tmp != '\0' && strchr("1234567890-+eE.", *tmp) != NULL; tmp++) {
             if (*tmp == 'e' || *tmp == 'E' || *tmp == '.') {
                 doubleFlag = true;
                 break;
@@ -624,7 +687,7 @@ static flJson* flJson_Parse_(strStatus_* status_, int depth) {
  */
 flJson* flJson_Parse(const char* str) {
     strStatus_ allStatus = {
-        .head = str,
+        .tail = str + strlen(str),
         .now = str
     };
     flJson* ret = flJson_Parse_(&allStatus, 1);
@@ -633,7 +696,31 @@ flJson* flJson_Parse(const char* str) {
 
     if (ret == NULL) {
         return NULL;
-    } else if (*(allStatus.now) != '\0'){
+    } else if (allStatus.now != allStatus.tail){
+        flJson_UnRef(ret);
+        return NULL;
+    } else {
+        return ret;
+    }
+}
+
+/**
+ * 解析指定长度的字符串为Json
+ * 
+ * @return - 解析出错返回NULL
+ */
+flJson* flJson_ParseWithLength(const char* str, size_t len) {
+    strStatus_ allStatus = {
+        .tail = str + len,
+        .now = str
+    };
+    flJson* ret = flJson_Parse_(&allStatus, 1);
+
+    ignoreSpace_(&allStatus);
+
+    if (ret == NULL) {
+        return NULL;
+    } else if (allStatus.now != allStatus.tail){
         flJson_UnRef(ret);
         return NULL;
     } else {
