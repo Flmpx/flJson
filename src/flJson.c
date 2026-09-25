@@ -231,7 +231,7 @@ bool* flJsonBool_Get(flJson* jb) {
  */
 
 /* 对字符串进行hash */
-static size_t hash_string(const char* str) {
+static size_t hashString_(const char* str) {
     size_t res = 5381;
     int c;
     while (c = *str++) {
@@ -241,19 +241,19 @@ static size_t hash_string(const char* str) {
 }
 
 /* 将Object的内部信息 --> hm_map */
-static void flObject__TO__hm_map(flJson* jo, hm_map* m) {
+static void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
     m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
     m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
     m->cmp_key = (hm_cmp)strcmp;
     m->free_key = (hm_free)free;
     m->free_val = (hm_free)flJson_UnRef;
-    m->hash_key = (hm_hash)hash_string;
+    m->hash_key = (hm_hash)hashString_;
     m->len = jo->valObject_.cap_;
     m->size = jo->valObject_.size_;
 }
 
 /* 将hm_map的内部信息 --> Object */
-static void hm_map__TO__flObject(hm_map* m, flJson* jo) {
+static void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
     jo->valObject_.cap_ = m->len;
     jo->valObject_.size_ = m->size;
     jo->valObject_.entrys_ = (void*)m->buckets;
@@ -261,7 +261,7 @@ static void hm_map__TO__flObject(hm_map* m, flJson* jo) {
 }
 
 /* 将Array的内部信息 --> hm_arr */
-static void flArray__TO__hm_arr(flJson* ja, hm_arr* a) {
+static void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
     a->capacity = ja->valArray_.cap_;
     a->dynamic_grow = true;
     a->free_val = (hm_free)flJson_UnRef;
@@ -270,7 +270,7 @@ static void flArray__TO__hm_arr(flJson* ja, hm_arr* a) {
 }
 
 /* 将hm_arr的内部信息 --> Array */
-static void hm_arr__TO__flArray(hm_arr* a, flJson* ja) {
+static void hm_arr__TO__flArray_(hm_arr* a, flJson* ja) {
     ja->valArray_.array_ = (flJson**)a->vals;
     ja->valArray_.cap_ = a->capacity;
     ja->valArray_.size_ = a->size;
@@ -314,7 +314,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
     idx = idx > s ? s : idx;
 
     hm_arr arr;
-    flArray__TO__hm_arr(ja, &arr);       // 转化
+    flArray__TO__hm_arr_(ja, &arr);       // 转化
 
     hm_arr_ret retCode = hm_arr_insert_index(&arr, j, idx);
 
@@ -322,7 +322,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
         return flRet_Error;
     } else {
         j->refCount_++;
-        hm_arr__TO__flArray(&arr, ja);    // 转化
+        hm_arr__TO__flArray_(&arr, ja);    // 转化
         return flRet_Suc;
     }
 }
@@ -344,11 +344,11 @@ flRet flJsonArray_Del(flJson* ja, size_t idx) {
     }
 
     hm_arr arr;
-    flArray__TO__hm_arr(ja, &arr);
+    flArray__TO__hm_arr_(ja, &arr);
 
     hm_arr_del_index(&arr, idx);
 
-    hm_arr__TO__flArray(&arr, ja);
+    hm_arr__TO__flArray_(&arr, ja);
 
     return flRet_Suc;
 }
@@ -367,7 +367,7 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
     }
 
     hm_arr arr;
-    flArray__TO__hm_arr(ja, &arr);
+    flArray__TO__hm_arr_(ja, &arr);
 
     flJson* ret = hm_arr_get(&arr, idx);
 
@@ -421,7 +421,7 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
     }
 
     hm_map map;
-    flObject__TO__hm_map(jo, &map);
+    flObject__TO__hm_map_(jo, &map);
 
     hm_map_ret retCode = hm_map_insert(&map, new_s, j);
 
@@ -447,7 +447,7 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
         /* 正常插入 */
         j->refCount_++;
     }
-    hm_map__TO__flObject(&map, jo);
+    hm_map__TO__flObject_(&map, jo);
     
     return flRet_Suc;
 
@@ -466,7 +466,7 @@ flRet flJsonObject_Del(flJson* jo, const char* key) {
     }
 
     hm_map map;
-    flObject__TO__hm_map(jo, &map);
+    flObject__TO__hm_map_(jo, &map);
 
     hm_map_ret retCode = hm_map_del(&map, (void*)key);
     
@@ -492,7 +492,7 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
     }
 
     hm_map map;
-    flObject__TO__hm_map(jo, &map);
+    flObject__TO__hm_map_(jo, &map);
 
     flJson* ret = hm_map_get(&map, (void*)key).val;
 
@@ -509,20 +509,20 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
 /* Unref解引Json */
 
 /* 释放掉Json中的Array, 等于直接调用hm_arr_free函数 */
-static void flArray_Free(flJson* ja) {
+static void flArray_Free_(flJson* ja) {
 
     hm_arr arr;
-    flArray__TO__hm_arr(ja, &arr);
+    flArray__TO__hm_arr_(ja, &arr);
 
     hm_arr_free(&arr);
 
 }
 
 /* 释放掉Json中的Object, 等于直接调用hm_map_free函数 */
-static void flObject_Free(flJson* jo) {
+static void flObject_Free_(flJson* jo) {
 
     hm_map map;
-    flObject__TO__hm_map(jo, &map);
+    flObject__TO__hm_map_(jo, &map);
 
     hm_map_free(&map);
     
@@ -541,8 +541,8 @@ void flJson_UnRef(flJson* j) {
         /* 只有string, object, array特殊处理 */
         switch (j->type_) {
             case flJsonTypeString: free(j->valString_);             break;
-            case flJsonTypeObject: flObject_Free(j);                break;
-            case flJsonTypeArray:  flArray_Free(j);                 break;
+            case flJsonTypeObject: flObject_Free_(j);                break;
+            case flJsonTypeArray:  flArray_Free_(j);                 break;
         }
         free(j);
     }

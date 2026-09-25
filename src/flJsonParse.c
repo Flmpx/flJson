@@ -17,26 +17,27 @@
  ***************************************************************************/
 
 
-static const int maxRecusiveDepth_ = 256;
+/* 递归的深度限制 */
+static const int MAX_RECURSIVE_DEEPTH_ = 256;
 
 /* 当前待解析字符串的状态, tail为尾指针, now为当前指向 */
-typedef struct strStatus_ {
+typedef struct BufStatus_ {
     const char* const tail;
     const char* now;
-} strStatus_;
+} BufStatus_;
 
 
-static flJson* flJson_Parse_(strStatus_* status_, int depth);   
+static flJson* flJson_Parse_(BufStatus_* status, int depth);   
 
 /* 忽略空白字符 */
-static inline void ignoreSpace_(strStatus_* status_) {
-    while (status_->now < status_->tail && 
-          (*(status_->now) == '\n' || *(status_->now) == '\t' || *(status_->now) == '\n' || *(status_->now) == ' ' || *(status_->now) == '\r')) status_->now++;
+static inline void ignoreSpace_(BufStatus_* status) {
+    while (status->now < status->tail && 
+          (*(status->now) == '\n' || *(status->now) == '\t' || *(status->now) == '\n' || *(status->now) == ' ' || *(status->now) == '\r')) status->now++;
 }
 
-static inline bool isTooDeep(int* depth) {
+static inline bool isTooDeep_(int* depth) {
     (*depth)++;
-    if (*depth > maxRecusiveDepth_) {
+    if (*depth > MAX_RECURSIVE_DEEPTH_) {
         return true;
     } else {
         return false;
@@ -44,7 +45,7 @@ static inline bool isTooDeep(int* depth) {
 }
 
 /* 16进制字符转为10进制, 若字符不合法, 返回-1 */
-static int hexToInt(char ch) {
+static int hexToInt_(char ch) {
     if (ch >= '0' && ch <= '9') return ch - '0';
     if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
     if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
@@ -52,8 +53,8 @@ static int hexToInt(char ch) {
 }
 
 /* Unicode码点转UTF-8字节序列, 必须保证out字符串开始的时候全为 '\0', 返回写入的字符数 */
-static int codePointToUtf8(uint32_t cp, char* out, int depth) {
-    if (isTooDeep(&depth)) {
+static int codePointToUtf8_(uint32_t cp, char* out, int depth) {
+    if (isTooDeep_(&depth)) {
         return -1;
     }
 
@@ -90,44 +91,44 @@ static int codePointToUtf8(uint32_t cp, char* out, int depth) {
 }
 
 /* 解析字符串中的Unicode码点, 需要保证in全是 '\0', 解析出错返回NULL, 正确就返回in本身 */
-static char* ParseUnicode_(strStatus_* status_, char* in, int depth) {
-    if (isTooDeep(&depth)) {
+static char* parseUnicode_(BufStatus_* status, char* in, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
     
     /* 由于是在字符串里面, 不可以跳过空白字符 */
 
-    strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
+    BufStatus_ status_tmp = *status;   // 创建临时状态信息
 
-    if (statusTmp_.now + 6 > statusTmp_.tail) return NULL;  // \u0000为六个字符
+    if (status_tmp.now + 6 > status_tmp.tail) return NULL;  // \u0000为六个字符
 
-    if (*statusTmp_.now != '\\') return NULL;
-    statusTmp_.now++;
-    if (*statusTmp_.now != 'u') return NULL;
-    statusTmp_.now++;
+    if (*status_tmp.now != '\\') return NULL;
+    status_tmp.now++;
+    if (*status_tmp.now != 'u') return NULL;
+    status_tmp.now++;
 
-    uint32_t codePoint = 0;
+    uint32_t code_point = 0;
     for (int i = 0; i < 4; i++) {
-        int v = hexToInt(*statusTmp_.now++);
+        int v = hexToInt_(*status_tmp.now++);
         if (v == -1) {
             return NULL;
         }
-        codePoint = (codePoint << 4) | v; 
+        code_point = (code_point << 4) | v; 
     }
 
     /* 高位标记 */
-    if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
+    if (code_point >= 0xD800 && code_point <= 0xDBFF) {
 
-        if (statusTmp_.now + 6 > statusTmp_.tail) return NULL;
+        if (status_tmp.now + 6 > status_tmp.tail) return NULL;
 
-        if (*statusTmp_.now != '\\') return NULL;
-        statusTmp_.now++;    
-        if (*statusTmp_.now != 'u') return NULL;
-        statusTmp_.now++;
+        if (*status_tmp.now != '\\') return NULL;
+        status_tmp.now++;    
+        if (*status_tmp.now != 'u') return NULL;
+        status_tmp.now++;
         
         uint32_t low = 0;
         for (int i = 0; i < 4; i++) {
-            int v = hexToInt(*statusTmp_.now++);
+            int v = hexToInt_(*status_tmp.now++);
             if (v == -1) {
                 return NULL;
             }
@@ -138,37 +139,37 @@ static char* ParseUnicode_(strStatus_* status_, char* in, int depth) {
             return NULL;
         }
 
-        codePoint = 0x10000 + ((codePoint - 0xD800) << 10) + (low - 0xDC00);
+        code_point = 0x10000 + ((code_point - 0xD800) << 10) + (low - 0xDC00);
 
-    } else if (codePoint >= 0xDC00 && codePoint <= 0xDFFF) {        // 孤立的低位
+    } else if (code_point >= 0xDC00 && code_point <= 0xDFFF) {        // 孤立的低位
         return NULL;
     }
 
-    if (codePointToUtf8(codePoint, in, depth) <= 0) {
+    if (codePointToUtf8_(code_point, in, depth) <= 0) {
         return NULL;
     }
 
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return in;
 }
 
 /* 解析字符串, 异常返回NULL */
-static char* parseStr_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static char* parseStr_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
 
-    strStatus_ statusTmp_ = *status_;   // 创建临时状态信息
+    BufStatus_ status_tmp = *status;   // 创建临时状态信息
 
-    if (statusTmp_.now + 1 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 1 > status_tmp.tail) return NULL;
 
-    if (*statusTmp_.now != '\"') return NULL;
-    statusTmp_.now++;
+    if (*status_tmp.now != '\"') return NULL;
+    status_tmp.now++;
 
-    if (statusTmp_.now + 1 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 1 > status_tmp.tail) return NULL;
 
     hm_str str;
     if (hm_str_init_reserve(&str, 17) != hm_str_ret_suc) {
@@ -177,25 +178,25 @@ static char* parseStr_(strStatus_* status_, int depth) {
 
     char tmp[5] = "5201";       // 转码最多4个字节
 
-    while (*statusTmp_.now != '\"') {
+    while (*status_tmp.now != '\"') {
         memset(tmp, 0, sizeof(tmp));        // 全部置零, 以便通过append函数插入
         
         /* 非法字符 */
-        if (*statusTmp_.now >= 0x00 && *statusTmp_.now <= 0x1F) {
+        if (*status_tmp.now >= 0x00 && *status_tmp.now <= 0x1F) {
             hm_str_free(&str);
             return NULL;
         }
 
         /* 发现转义 */
-        if (*statusTmp_.now == '\\') {
+        if (*status_tmp.now == '\\') {
 
-            statusTmp_.now++;
-            if (statusTmp_.now + 1 > statusTmp_.tail) {
+            status_tmp.now++;
+            if (status_tmp.now + 1 > status_tmp.tail) {
                 hm_str_free(&str);
                 return NULL;
             }
 
-            switch (*statusTmp_.now) {
+            switch (*status_tmp.now) {
                 case 'b':   tmp[0] = '\b'; break;
                 case 'f':   tmp[0] = '\f'; break;
                 case 'n':   tmp[0] = '\n'; break;
@@ -205,19 +206,19 @@ static char* parseStr_(strStatus_* status_, int depth) {
                 case '\\':  tmp[0] = '\\'; break;
                 case '/':   tmp[0] = '/' ; break;
                 case 'u':
-                    statusTmp_.now--;       // 退回到\, 函数parseUnicode_会检查是否有\u
-                    if (ParseUnicode_(&statusTmp_, tmp, depth) == NULL) {
+                    status_tmp.now--;       // 退回到\, 函数parseUnicode_会检查是否有\u
+                    if (parseUnicode_(&status_tmp, tmp, depth) == NULL) {
                         hm_str_free(&str);
                         return NULL;
                     }
-                    statusTmp_.now--;       //由于ParseUnicode_函数会跳到\uxxxx的后面去, 所以要跳回来
+                    status_tmp.now--;       //由于ParseUnicode_函数会跳到\uxxxx的后面去, 所以要跳回来
                 break;
                 default:
                     hm_str_free(&str);
                     return NULL;
             }
         } else {
-            tmp[0] = *statusTmp_.now;
+            tmp[0] = *status_tmp.now;
         }
 
         /* 拼接字符串 */
@@ -226,45 +227,45 @@ static char* parseStr_(strStatus_* status_, int depth) {
             return NULL;
         }
 
-        statusTmp_.now++;           // 当前字符解析完成, 跳到下一个
-        if (statusTmp_.now + 1 > statusTmp_.tail) {
+        status_tmp.now++;           // 当前字符解析完成, 跳到下一个
+        if (status_tmp.now + 1 > status_tmp.tail) {
             hm_str_free(&str);
             return NULL;
         }
 
     }
 
-    statusTmp_.now++;
+    status_tmp.now++;
     
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return hm_str_pop(&str);
 }
 
 /* 解析整数, 异常返回NULL */
-static flJson* flJsonLL_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonLL_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 1 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 1 > status_tmp.tail) return NULL;
     
     
     /* 由于strtoll函数没法根据len来解析数字, 故创建小型缓冲区 */
-    const char* tmp = statusTmp_.now;
-    while (tmp < statusTmp_.tail && 
+    const char* tmp = status_tmp.now;
+    while (tmp < status_tmp.tail && 
           ((*tmp >= '0' && *tmp <= '9') || *tmp == '-')) {
             tmp++;
     }
-    char* start = (char*)malloc(tmp - statusTmp_.now + 1);
+    char* start = (char*)malloc(tmp - status_tmp.now + 1);
     if (start == NULL) {
         return NULL;
     }
-    memcpy(start, statusTmp_.now, tmp - statusTmp_.now);
-    start[tmp - statusTmp_.now] = '\0';
+    memcpy(start, status_tmp.now, tmp - status_tmp.now);
+    start[tmp - status_tmp.now] = '\0';
 
 
     
@@ -289,44 +290,44 @@ static flJson* flJsonLL_Parse_(strStatus_* status_, int depth) {
 
     
     char* end = NULL;
-    long long valLL_ = strtoll(start, &end, 10);
-    statusTmp_.now += end - start;
+    long long valLL = strtoll(start, &end, 10);
+    status_tmp.now += end - start;
     free(start);
 
-    flJson* ret = flJsonLL_New(valLL_);
+    flJson* ret = flJsonLL_New(valLL);
     if (ret == NULL) {
         return NULL;
     }
     
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return ret;
 }
 
 /* 解析浮点数, 异常返回NULL */
-static flJson* flJsonDouble_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonDouble_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 1 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 1 > status_tmp.tail) return NULL;
 
 
     /* 由于strtod函数没法根据len来解析数字, 故创建小型缓冲区 */
-    const char* tmp = statusTmp_.now;
-    while (tmp < statusTmp_.tail && 
+    const char* tmp = status_tmp.now;
+    while (tmp < status_tmp.tail && 
           ((*tmp >= '0' && *tmp <= '9') || *tmp == '-' || *tmp == '+' || *tmp == 'e' || *tmp == 'E' || *tmp == '.')) {
             tmp++;
     }
-    char* start = (char*)malloc(tmp - statusTmp_.now + 1);
+    char* start = (char*)malloc(tmp - status_tmp.now + 1);
     if (start == NULL) {
         return NULL;
     }
-    memcpy(start, statusTmp_.now, tmp - statusTmp_.now);
-    start[tmp - statusTmp_.now] = '\0';
+    memcpy(start, status_tmp.now, tmp - status_tmp.now);
+    start[tmp - status_tmp.now] = '\0';
 
     
     const char* now = start;
@@ -374,34 +375,34 @@ static flJson* flJsonDouble_Parse_(strStatus_* status_, int depth) {
 
 
     char* end = NULL;
-    double valDouble_ = strtod(start, &end);
-    statusTmp_.now += end - start;
+    double valDouble = strtod(start, &end);
+    status_tmp.now += end - start;
     free(start);
 
 
-    flJson* ret = flJsonDouble_New(valDouble_);
+    flJson* ret = flJsonDouble_New(valDouble);
     if (ret == NULL) {
         return NULL;
     }
     
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return ret;
 }
 
 
 /* 解析字符串, 返回flJson, 异常返回NULL */
-static flJson* flJsonString_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonString_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);  
+    ignoreSpace_(status);  
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
     
-    if (statusTmp_.now + 1 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 1 > status_tmp.tail) return NULL;
     
-    char* str = parseStr_(&statusTmp_, depth);
+    char* str = parseStr_(&status_tmp, depth);
 
     if (str == NULL) {
         return NULL;
@@ -416,27 +417,27 @@ static flJson* flJsonString_Parse_(strStatus_* status_, int depth) {
     
     /* 解析成功, 更新状态并返回 */
     free(str);
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return ret;
 }
 
 /* 解析null, 异常返回NULL */
-static flJson* flJsonNull_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonNull_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 4 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 4 > status_tmp.tail) return NULL;
 
-    int cmpRes = strncmp(statusTmp_.now, "null", 4);
+    int cmp_res = strncmp(status_tmp.now, "null", 4);
 
-    if (cmpRes != 0) {
+    if (cmp_res != 0) {
         return NULL;
     }
-    statusTmp_.now += 4;
+    status_tmp.now += 4;
 
     flJson* ret = flJsonNull_New();
     if (ret == NULL) {
@@ -444,27 +445,27 @@ static flJson* flJsonNull_Parse_(strStatus_* status_, int depth) {
     }
 
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return ret;    
 }
 
 /* 解析true, 异常返回NULL */
-static flJson* flJsonBoolTrue_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonBoolTrue_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 4 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 4 > status_tmp.tail) return NULL;
 
-    int cmpRes = strncmp(statusTmp_.now, "true", 4);
+    int cmp_res = strncmp(status_tmp.now, "true", 4);
 
-    if (cmpRes != 0) {
+    if (cmp_res != 0) {
         return NULL;
     }
-    statusTmp_.now += 4;
+    status_tmp.now += 4;
 
     flJson* ret = flJsonBool_New(true);
     if (ret == NULL) {
@@ -472,27 +473,27 @@ static flJson* flJsonBoolTrue_Parse_(strStatus_* status_, int depth) {
     }
 
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return ret;  
 }
 
 /* 解析false, 异常返回NULL */
-static flJson* flJsonBoolFalse_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonBoolFalse_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 5 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 5 > status_tmp.tail) return NULL;
 
-    int cmpRes = strncmp(statusTmp_.now, "false", 5);
+    int cmp_res = strncmp(status_tmp.now, "false", 5);
 
-    if (cmpRes != 0) {
+    if (cmp_res != 0) {
         return NULL;
     }
-    statusTmp_.now += 5;
+    status_tmp.now += 5;
 
     flJson* ret = flJsonBool_New(false);
     if (ret == NULL) {
@@ -500,70 +501,71 @@ static flJson* flJsonBoolFalse_Parse_(strStatus_* status_, int depth) {
     }
 
     /* 解析成功, 更新状态并返回 */
-    status_->now = statusTmp_.now;
+    status->now = status_tmp.now;
     return ret;  
 }
 
 /* 解析Object, 异常返回NULL */
-static flJson* flJsonObject_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonObject_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 2 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 2 > status_tmp.tail) return NULL;
 
-    if (*statusTmp_.now != '{') return NULL;
-    statusTmp_.now++;
+    if (*status_tmp.now != '{') return NULL;
+    status_tmp.now++;
 
     flJson* obj = flJsonObject_New();
     if (obj == NULL) {
         return NULL;
     }
 
-    ignoreSpace_(&statusTmp_);
+    ignoreSpace_(&status_tmp);
 
-    if (statusTmp_.now + 1 > statusTmp_.tail) {
+    if (status_tmp.now + 1 > status_tmp.tail) {
         flJson_UnRef(obj);
         return NULL;
     }
-    if (*statusTmp_.now == '}') {
+    if (*status_tmp.now == '}') {
         /* 空object */
-        statusTmp_.now++;
-        status_->now = statusTmp_.now;
+        status_tmp.now++;
+        status->now = status_tmp.now;
         return obj;
     }
 
-    bool flagError = false;
+    /* 解析出现了异常 */
+    bool flag_err = false;
     do {
         /* 解析key */
-        char* key = parseStr_(&statusTmp_, depth);
+        char* key = parseStr_(&status_tmp, depth);
         if (key == NULL) {
-            flagError = true;
+            flag_err = true;
             break;
         }
 
-        ignoreSpace_(&statusTmp_);
+        ignoreSpace_(&status_tmp);
 
-        if (statusTmp_.now + 1 > statusTmp_.tail) {
+        if (status_tmp.now + 1 > status_tmp.tail) {
             free(key);
             flJson_UnRef(obj);
             return NULL;
         }
-        if(*statusTmp_.now != ':') {
+        if(*status_tmp.now != ':') {
             free(key);
-            flagError = true;
+            flag_err = true;
             break;
         }
-        statusTmp_.now++;
+        status_tmp.now++;
 
         /* 解析json */
-        flJson* j = flJson_Parse_(&statusTmp_, depth);
+        flJson* j = flJson_Parse_(&status_tmp, depth);
 
         if (j == NULL) {
-            flagError = true;
+            flag_err = true;
             free(key);
             break;
         }
@@ -575,68 +577,69 @@ static flJson* flJsonObject_Parse_(strStatus_* status_, int depth) {
         } else {
             free(key); // 字符串为深拷贝
             flJson_UnRef(j);        // 失败了自然要解引
-            flagError = true;
+            flag_err = true;
             break;
         }
 
-        ignoreSpace_(&statusTmp_);
-        if (statusTmp_.now + 1 > statusTmp_.tail) {
+        ignoreSpace_(&status_tmp);
+        if (status_tmp.now + 1 > status_tmp.tail) {
             flJson_UnRef(obj);
             return NULL;
         }
-    } while (*statusTmp_.now == ',' && statusTmp_.now++);   // 如果是逗号, 则跳过, 如果不是, 那个statusTmp_.now是不会加的
+    } while (*status_tmp.now == ',' && status_tmp.now++);   // 如果是逗号, 则跳过, 如果不是, 那个statusTmp_.now是不会加的
 
 
-    if (flagError || *statusTmp_.now != '}') {
+    if (flag_err || *status_tmp.now != '}') {
         flJson_UnRef(obj);
         return NULL;
     } else {
-        statusTmp_.now++;
+        status_tmp.now++;
 
         /* 解析成功, 更新状态并返回 */
-        status_->now = statusTmp_.now;
+        status->now = status_tmp.now;
         return obj;
     }
 }
 
 /* 解析Array, 异常返回NULL */
-static flJson* flJsonArray_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJsonArray_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
-    strStatus_ statusTmp_ = *status_;
+    BufStatus_ status_tmp = *status;
 
-    if (statusTmp_.now + 2 > statusTmp_.tail) return NULL;
+    if (status_tmp.now + 2 > status_tmp.tail) return NULL;
 
-    if (*statusTmp_.now != '[') return NULL;
-    statusTmp_.now++;
+    if (*status_tmp.now != '[') return NULL;
+    status_tmp.now++;
 
     flJson* arr = flJsonArray_New();
     if (arr == NULL) {
         return NULL;
     }
 
-    ignoreSpace_(&statusTmp_);
+    ignoreSpace_(&status_tmp);
 
-    if (statusTmp_.now + 1 > statusTmp_.tail) {
+    if (status_tmp.now + 1 > status_tmp.tail) {
         flJson_UnRef(arr);
         return NULL;
     }
-    if (*statusTmp_.now == ']') {
+    if (*status_tmp.now == ']') {
         /* 空object */
-        statusTmp_.now++;
-        status_->now = statusTmp_.now;
+        status_tmp.now++;
+        status->now = status_tmp.now;
         return arr;
     }
 
-    bool flagError = false;
+    /* 解析出现了异常 */
+    bool flag_err = false;
     do {
         /* 解析json */
-        flJson* j = flJson_Parse_(&statusTmp_, depth);
+        flJson* j = flJson_Parse_(&status_tmp, depth);
         if (j == NULL) {
-            flagError = true;
+            flag_err = true;
             break;
         }
 
@@ -645,82 +648,82 @@ static flJson* flJsonArray_Parse_(strStatus_* status_, int depth) {
             flJson_UnRef(j);
         } else {
             flJson_UnRef(j);
-            flagError = true;
+            flag_err = true;
             break;
         }
 
-        ignoreSpace_(&statusTmp_);
+        ignoreSpace_(&status_tmp);
         
-        if (statusTmp_.now + 1 > statusTmp_.tail) {
+        if (status_tmp.now + 1 > status_tmp.tail) {
             flJson_UnRef(arr);
             return NULL;
         }
-    } while (*statusTmp_.now == ',' && statusTmp_.now++);   // 如果是逗号, 则跳过, 如果不是, 那个statusTmp_.now是不会加的
+    } while (*status_tmp.now == ',' && status_tmp.now++);   // 如果是逗号, 则跳过, 如果不是, 那个statusTmp_.now是不会加的
 
-    if (flagError || *statusTmp_.now != ']') {
+    if (flag_err || *status_tmp.now != ']') {
         flJson_UnRef(arr);
         return NULL;
     } else {
-        statusTmp_.now++;
+        status_tmp.now++;
 
         /* 解析成功, 更新状态并返回 */
-        status_->now = statusTmp_.now;
+        status->now = status_tmp.now;
         return arr;
     }
 }
 
 /* 解析Json, 异常返回NULL */
-static flJson* flJson_Parse_(strStatus_* status_, int depth) {
-    if (isTooDeep(&depth)) {
+static flJson* flJson_Parse_(BufStatus_* status, int depth) {
+    if (isTooDeep_(&depth)) {
         return NULL;
     }
-    ignoreSpace_(status_);
+    ignoreSpace_(status);
 
     /* 此处为中转站, 无需创建临时状态 */
 
-    if (status_->now + 1 > status_->tail) return NULL;
+    if (status->now + 1 > status->tail) return NULL;
 
-    char headCh = *status_->now;
+    char head_ch = *status->now;
 
-    if ((headCh >= '0' && headCh <= '9') || headCh == '-') {
+    if ((head_ch >= '0' && head_ch <= '9') || head_ch == '-') {
         
         /* 判断是否位浮点数 */
-        bool doubleFlag = false;
-        const char* tmp = status_->now;
-        while (tmp < status_->tail && 
+        bool double_flag = false;
+        const char* tmp = status->now;
+        while (tmp < status->tail && 
               ((*tmp >= '0' && *tmp <= '9') || *tmp == '-' || *tmp == '+' || *tmp == 'e' || *tmp == 'E' || *tmp == '.')) {
 
                 if (*tmp == 'e' || *tmp == 'E' || *tmp == '.') {
-                    doubleFlag = true;
+                    double_flag = true;
                     break;
                 }
                 tmp++;
         }
 
-        if (doubleFlag) {
-            return flJsonDouble_Parse_(status_, depth);
+        if (double_flag) {
+            return flJsonDouble_Parse_(status, depth);
         } else {
-            return flJsonLL_Parse_(status_, depth);
+            return flJsonLL_Parse_(status, depth);
         }
         
-    } else if (headCh == 'n') {
+    } else if (head_ch == 'n') {
         /* Null */
-        return flJsonNull_Parse_(status_, depth);
-    } else if (headCh == 't') {
+        return flJsonNull_Parse_(status, depth);
+    } else if (head_ch == 't') {
         /* True */
-        return flJsonBoolTrue_Parse_(status_, depth);
-    } else if (headCh == 'f'){
+        return flJsonBoolTrue_Parse_(status, depth);
+    } else if (head_ch == 'f'){
         /* False */
-        return flJsonBoolFalse_Parse_(status_, depth);
-    } else if (headCh == '\"') {
+        return flJsonBoolFalse_Parse_(status, depth);
+    } else if (head_ch == '\"') {
         /* String */
-        return flJsonString_Parse_(status_, depth);
-    } else if (headCh == '{') {
+        return flJsonString_Parse_(status, depth);
+    } else if (head_ch == '{') {
         /* Object */
-        return flJsonObject_Parse_(status_, depth);
-    } else if (headCh == '[') {
+        return flJsonObject_Parse_(status, depth);
+    } else if (head_ch == '[') {
         /* Array */
-        return flJsonArray_Parse_(status_, depth);
+        return flJsonArray_Parse_(status, depth);
     } else {
         /* Error */
         return NULL;
@@ -735,17 +738,18 @@ static flJson* flJson_Parse_(strStatus_* status_, int depth) {
  * @return - 解析出错返回NULL
  */
 flJson* flJson_Parse(const char* str) {
-    strStatus_ allStatus = {
+    /* 带解析的字符串初始状态 */
+    BufStatus_ start_status = {
         .tail = str + strlen(str),
         .now = str
     };
-    flJson* ret = flJson_Parse_(&allStatus, 1);
+    flJson* ret = flJson_Parse_(&start_status, 1);
 
-    ignoreSpace_(&allStatus);
+    ignoreSpace_(&start_status);
 
     if (ret == NULL) {
         return NULL;
-    } else if (allStatus.now < allStatus.tail){
+    } else if (start_status.now < start_status.tail){
         flJson_UnRef(ret);
         return NULL;
     } else {
@@ -759,17 +763,18 @@ flJson* flJson_Parse(const char* str) {
  * @return - 解析出错返回NULL
  */
 flJson* flJson_ParseWithLength(const char* str, size_t len) {
-    strStatus_ allStatus = {
+    /* 带解析的字符串初始状态 */
+    BufStatus_ start_status = {
         .tail = str + len,
         .now = str
     };
-    flJson* ret = flJson_Parse_(&allStatus, 1);
+    flJson* ret = flJson_Parse_(&start_status, 1);
 
-    ignoreSpace_(&allStatus);
+    ignoreSpace_(&start_status);
 
     if (ret == NULL) {
         return NULL;
-    } else if (allStatus.now < allStatus.tail){
+    } else if (start_status.now < start_status.tail){
         /* 解析完成后应该到达尾指针, 如果不是, 说明错误 */
         flJson_UnRef(ret);
         return NULL;
