@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-// 速度测试总次数
+/* 速度测试总次数 */
 extern int FLJSON_SPEEDTEST_CNT;
 
 extern void TEST_JSON_PARSE_SPEED(const char* jsonSrcDir, size_t parseCnt);

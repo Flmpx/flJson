@@ -2,12 +2,12 @@
 #include "../include/flJson.h"
 #include <string.h>
 
-// 引入 hm_map 和 hm_arr
+/* 引入 hm_map 和 hm_arr */
 #include <hm_map.h>
 #include <hm_arr.h>
 
 
-// 不同类型Json的创建
+/* 不同类型Json的创建 */
 
 /**
  * 创建LL类型的Json
@@ -137,7 +137,7 @@ flJson* flJsonString_New(const char* s) {
     if (ret == NULL) {
         return NULL;
     }
-    // 复制字符串
+    /* 复制字符串 */
     char* new_s = strdup(s);
     if (new_s == NULL) {
         free(ret);
@@ -151,7 +151,7 @@ flJson* flJsonString_New(const char* s) {
     return ret;
 }
 
-// Json类型的判断
+/* Json类型的判断 */
 
 /**
  * 检测Json的类型
@@ -165,7 +165,7 @@ bool flJson_CheckType(flJson* j, flJsonType type) {
 
 
 
-// JsonLL的操作
+/* JsonLL的操作 */
 
 /**
  * 获取LL型Json的内部数据
@@ -180,7 +180,7 @@ long long* flJsonLL_Get(flJson* jll) {
     return &(jll->valLL_);
 }
 
-// JsonDouble的操作
+/* JsonDouble的操作 */
 
 /**
  * 获取Double型Json的内部数据
@@ -195,7 +195,7 @@ double* flJsonDouble_Get(flJson* jd) {
     return &(jd->valDouble_);
 }
 
-// JsonString的操作
+/* JsonString的操作 */
 
 /**
  * 获取String型Json的内部数据
@@ -210,7 +210,7 @@ char* flJsonString_Get(flJson* js) {
     return js->valString_;
 }
 
-// JsonBool的操作
+/* JsonBool的操作 */
 
 /**
  * 获取Bool型Json的内部数据
@@ -230,7 +230,7 @@ bool* flJsonBool_Get(flJson* jb) {
  * 用于hm_map <-> flObject, hm_arr <-> flArray 之间的内容转化
  */
 
-// 对字符串进行hash
+/* 对字符串进行hash */
 static size_t hash_string(const char* str) {
     size_t res = 5381;
     int c;
@@ -240,7 +240,7 @@ static size_t hash_string(const char* str) {
     return res;
 }
 
-// 将Object的内部信息 --> hm_map
+/* 将Object的内部信息 --> hm_map */
 static void flObject__TO__hm_map(flJson* jo, hm_map* m) {
     m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
     m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
@@ -252,7 +252,7 @@ static void flObject__TO__hm_map(flJson* jo, hm_map* m) {
     m->size = jo->valObject_.size_;
 }
 
-// 将hm_map的内部信息 --> Object
+/* 将hm_map的内部信息 --> Object */
 static void hm_map__TO__flObject(hm_map* m, flJson* jo) {
     jo->valObject_.cap_ = m->len;
     jo->valObject_.size_ = m->size;
@@ -260,7 +260,7 @@ static void hm_map__TO__flObject(hm_map* m, flJson* jo) {
     jo->valObject_.status_ = (int*)m->buckets_status;
 }
 
-// 将Array的内部信息 --> hm_arr
+/* 将Array的内部信息 --> hm_arr */
 static void flArray__TO__hm_arr(flJson* ja, hm_arr* a) {
     a->capacity = ja->valArray_.cap_;
     a->dynamic_grow = true;
@@ -269,7 +269,7 @@ static void flArray__TO__hm_arr(flJson* ja, hm_arr* a) {
     a->vals = (void**)ja->valArray_.array_;
 }
 
-// 将hm_arr的内部信息 --> Array
+/* 将hm_arr的内部信息 --> Array */
 static void hm_arr__TO__flArray(hm_arr* a, flJson* ja) {
     ja->valArray_.array_ = (flJson**)a->vals;
     ja->valArray_.cap_ = a->capacity;
@@ -278,7 +278,7 @@ static void hm_arr__TO__flArray(hm_arr* a, flJson* ja) {
 
 
 
-// JsonArray的操作
+/* JsonArray的操作 */
 
 /**
  * 获取Array类型Json的大小
@@ -310,7 +310,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
     }
 
     size_t s = ja->valArray_.size_;
-    // 自动矫正
+    /* 自动矫正 */
     idx = idx > s ? s : idx;
 
     hm_arr arr;
@@ -382,7 +382,7 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
 
 
 
-// JsonObject的操作
+/* JsonObject的操作 */
 
 
 /**
@@ -429,12 +429,12 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
         free(new_s);
         return flRet_Error;
     } else if (retCode == hm_map_ret_existed) {
-        // 重复键处理
+        /* 重复键处理 */
         hm_map_entry* tmp = hm_map_get_entry(&map, (void*)key);
         free(new_s);
 
         if (j != tmp->val) {
-            // 如果插入的不是相同的才更新
+            /* 如果插入的不是相同的才更新 */
             flJson_UnRef(tmp->val); // 删掉旧的
 
             tmp->val = j;
@@ -444,7 +444,7 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
 
 
     } else {
-        // 正常插入
+        /* 正常插入 */
         j->refCount_++;
     }
     hm_map__TO__flObject(&map, jo);
@@ -506,9 +506,9 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
 
 
 
-// Unref解引Json
+/* Unref解引Json */
 
-// 释放掉Json中的Array, 等于直接调用hm_arr_free函数
+/* 释放掉Json中的Array, 等于直接调用hm_arr_free函数 */
 static void flArray_Free(flJson* ja) {
 
     hm_arr arr;
@@ -518,7 +518,7 @@ static void flArray_Free(flJson* ja) {
 
 }
 
-// 释放掉Json中的Object, 等于直接调用hm_map_free函数
+/* 释放掉Json中的Object, 等于直接调用hm_map_free函数 */
 static void flObject_Free(flJson* jo) {
 
     hm_map map;
@@ -538,7 +538,7 @@ void flJson_UnRef(flJson* j) {
     j->refCount_--;
 
     if (j->refCount_ == 0) {
-        // 只有string, object, array特殊处理
+        /* 只有string, object, array特殊处理 */
         switch (j->type_) {
             case flJsonTypeString: free(j->valString_);             break;
             case flJsonTypeObject: flObject_Free(j);                break;

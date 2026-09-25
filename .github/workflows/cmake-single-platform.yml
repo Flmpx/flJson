@@ -47,6 +47,6 @@ jobs:
     - name: Build       
       run: cmake --build ${{github.workspace}}/bin --target flJson_SpeedTest_Exe --config ${{env.BUILD_TYPE}}
 
-    - name: Test Json Grammar
+    - name: Test Json Speed
       working-directory: ${{github.workspace}}/bin
       run: ctest -R flJson_SpeedTest_Exe -V        # 需要展示详情

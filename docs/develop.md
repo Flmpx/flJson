@@ -8,13 +8,13 @@
 - 数组(Array) 以及 对象(Object) 单独抽象出来成为一个结构体, 分别叫做 `flArray` 和 `flObject`, 同时设置他们的层次和flJson是一样的, 都有相关的函数 
 
 ```c
-// Json本体
+/* Json本体 */
 typedef struct flJson flJson;
 
-// Json数组
+/* Json数组 */
 typedef struct flArray flArray;
 
-// Json对象
+/* Json对象 */
 typedef struct flObject flObject;
 ```
 
@@ -41,7 +41,7 @@ typedef struct flObject flObject;
 二来, flJson本来就有整数, 字符串(深拷贝)等基础类型的内存所有权, 如果按照上面这种设计, 那flJson对数组和对象是没有权限的, 必须由使用者手动转移, 这个过程是很繁琐的, 但是直接嵌入的话, flJson就管着所有类型的数据了, 这不就**统一六国**了吗?(NULL什么都不是🙂)
 
 ```c
-// Json对象
+/* Json对象 */
 typedef struct flObject flObject;
 ```
 

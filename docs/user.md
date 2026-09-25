@@ -33,7 +33,7 @@ flJsonObject_Add(obj, "age", num);
 flJsonObject_Add(obj, "color",  str);
 
 
-// 由于现在不需要使用到这个两个Json, 且对象也接管了, 所以解引掉
+/* 由于现在不需要使用到这个两个Json, 且对象也接管了, 所以解引掉 */
 flJson_UnRef(num);
 flJson_UnRef(str);
 ```
@@ -41,7 +41,7 @@ flJson_UnRef(str);
 > 解引对象
 
 ```cpp
-// 使用完对象之后就可以解引了
+/* 使用完对象之后就可以解引了 */
 flJson_UnRef(obj);
 ```
 

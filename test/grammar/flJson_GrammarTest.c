@@ -4,20 +4,20 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// 测试来自JSONTestSuite/test_parsing/目录下的json文件
+/* 测试来自JSONTestSuite/test_parsing/目录下的json文件 */
 static void TEST_JSON_FROM_JSONTestSuite() {
     DIR* dir;
     struct dirent* entry;
 
     const char* skipJsonFileNames[] = {
-        // 由于拒绝字符串中的\u0000, 所以这两个文件跳过
+        /* 由于拒绝字符串中的\u0000, 所以这两个文件跳过 */
         "y_object_escaped_null_in_key.json",    // {"foo\u0000bar": 42}
         "y_string_null_escape.json"             // ["\u0000"]
     };
     int skipNum = sizeof(skipJsonFileNames) / sizeof(char*);
     
 
-    // SOURCE_HEAD_PATH 
+    /* SOURCE_HEAD_PATH  */
     dir = opendir(SOURCE_HEAD_PATH "JSONTestSuite/test_parsing/");
     
     const char* Head = "JSONTestSuite/test_parsing/";
@@ -32,7 +32,7 @@ static void TEST_JSON_FROM_JSONTestSuite() {
             continue;
         }
 
-        // 跳过部分文件
+        /* 跳过部分文件 */
         bool flag_skip = false;
         for (int i = 0; i < skipNum; i++) {
             if (strcmp(fileName, skipJsonFileNames[i]) == 0) {
@@ -67,7 +67,7 @@ int main()
 {
     TEST_JSON_FROM_JSONTestSuite();
 
-    // 打印总结果
+    /* 打印总结果 */
     printf("****All: %d,  Passed: %d,  Failed: %d.****\n", FLJSON_GRAMMARTEST_SUC_CNT + FLJSON_GRAMMARTEST_FAIL_CNT, FLJSON_GRAMMARTEST_SUC_CNT, FLJSON_GRAMMARTEST_FAIL_CNT);
     return FLJSON_GRAMMARTEST_FAIL_CNT;
 }

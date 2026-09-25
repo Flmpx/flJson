@@ -19,7 +19,7 @@
 int main()
 {
 
-    // 目前没有Json转字符串的函数, 暂时没有🙂
+    /* 目前没有Json转字符串的函数, 暂时没有🙂 */
     return 0;
 }
 
@@ -80,14 +80,14 @@ struct flJson {
         char* valString_;               // 存字符串指针
         bool valBool_;                  // 存布尔类型
 
-        // 存数组
+        /* 存数组 */
         struct {
             flJson** array_;            // 存着Json指针的数组
             size_t size_;               // 元素数目
             size_t cap_;                // 容量
         } valArray_;
 
-        // 存对象
+        /* 存对象 */
         struct {    
             void* entrys_;              // 存key和json的entry数组
             int* status_;               // 桶状态信息
