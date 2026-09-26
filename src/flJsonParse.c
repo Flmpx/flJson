@@ -13,7 +13,6 @@
  * 在解析的过程中, 如果要查看下一个或一段字符的内容, 首先要进行判断是否越界
  * 比如解析 `true` 那就的在解析之前写上 `if (now + 4 > tail) return NULL;`
  * 
- * 在每个函数开头基本都会有一个经典开头: 判断递归深度, 跳过空白字符
  ***************************************************************************/
 
 
@@ -35,6 +34,7 @@ static inline void ignoreSpace_(BufStatus_* status) {
           (*(status->now) == '\n' || *(status->now) == '\t' || *(status->now) == '\n' || *(status->now) == ' ' || *(status->now) == '\r')) status->now++;
 }
 
+/* 判断递归深度是否过深 */
 static inline bool isTooDeep_(int* depth) {
     (*depth)++;
     if (*depth > MAX_RECURSIVE_DEEPTH_) {
@@ -53,11 +53,7 @@ static int hexToInt_(char ch) {
 }
 
 /* Unicode码点转UTF-8字节序列, 必须保证out字符串开始的时候全为 '\0', 返回写入的字符数 */
-static int codePointToUtf8_(uint32_t cp, char* out, int depth) {
-    if (isTooDeep_(&depth)) {
-        return -1;
-    }
-
+static int codePointToUtf8_(uint32_t cp, char* out) {
     if (cp == 0x0000    ||         // flJson拒绝\u0000
         cp > 0x10FFFF   ||          
        (cp >= 0xD800 && cp <= 0xDFFF)) {
@@ -91,11 +87,7 @@ static int codePointToUtf8_(uint32_t cp, char* out, int depth) {
 }
 
 /* 解析字符串中的Unicode码点, 需要保证in全是 '\0', 解析出错返回NULL, 正确就返回in本身 */
-static char* parseUnicode_(BufStatus_* status, char* in, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
-    
+static char* parseUnicode_(BufStatus_* status, char* in) {
     /* 由于是在字符串里面, 不可以跳过空白字符 */
 
     BufStatus_ status_tmp = *status;   // 创建临时状态信息
@@ -145,7 +137,7 @@ static char* parseUnicode_(BufStatus_* status, char* in, int depth) {
         return NULL;
     }
 
-    if (codePointToUtf8_(code_point, in, depth) <= 0) {
+    if (codePointToUtf8_(code_point, in) <= 0) {
         return NULL;
     }
 
@@ -155,12 +147,8 @@ static char* parseUnicode_(BufStatus_* status, char* in, int depth) {
 }
 
 /* 解析字符串, 异常返回NULL */
-static char* parseStr_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static char* parseStr_(BufStatus_* status) {
     ignoreSpace_(status);
-
 
     BufStatus_ status_tmp = *status;   // 创建临时状态信息
 
@@ -207,7 +195,7 @@ static char* parseStr_(BufStatus_* status, int depth) {
                 case '/':   tmp[0] = '/' ; break;
                 case 'u':
                     status_tmp.now--;       // 退回到\, 函数parseUnicode_会检查是否有\u
-                    if (parseUnicode_(&status_tmp, tmp, depth) == NULL) {
+                    if (parseUnicode_(&status_tmp, tmp) == NULL) {
                         hm_str_free(&str);
                         return NULL;
                     }
@@ -243,10 +231,7 @@ static char* parseStr_(BufStatus_* status, int depth) {
 }
 
 /* 解析整数, 异常返回NULL */
-static flJson* flJsonLL_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static flJson* flJsonLL_Parse_(BufStatus_* status) {
     ignoreSpace_(status);
 
     BufStatus_ status_tmp = *status;
@@ -305,10 +290,7 @@ static flJson* flJsonLL_Parse_(BufStatus_* status, int depth) {
 }
 
 /* 解析浮点数, 异常返回NULL */
-static flJson* flJsonDouble_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static flJson* flJsonDouble_Parse_(BufStatus_* status) {
     ignoreSpace_(status);
 
     BufStatus_ status_tmp = *status;
@@ -392,17 +374,14 @@ static flJson* flJsonDouble_Parse_(BufStatus_* status, int depth) {
 
 
 /* 解析字符串, 返回flJson, 异常返回NULL */
-static flJson* flJsonString_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static flJson* flJsonString_Parse_(BufStatus_* status) {
     ignoreSpace_(status);  
 
     BufStatus_ status_tmp = *status;
     
     if (status_tmp.now + 1 > status_tmp.tail) return NULL;
     
-    char* str = parseStr_(&status_tmp, depth);
+    char* str = parseStr_(&status_tmp);
 
     if (str == NULL) {
         return NULL;
@@ -422,10 +401,7 @@ static flJson* flJsonString_Parse_(BufStatus_* status, int depth) {
 }
 
 /* 解析null, 异常返回NULL */
-static flJson* flJsonNull_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static flJson* flJsonNull_Parse_(BufStatus_* status) {
     ignoreSpace_(status);
 
     BufStatus_ status_tmp = *status;
@@ -450,10 +426,7 @@ static flJson* flJsonNull_Parse_(BufStatus_* status, int depth) {
 }
 
 /* 解析true, 异常返回NULL */
-static flJson* flJsonBoolTrue_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static flJson* flJsonBoolTrue_Parse_(BufStatus_* status) {
     ignoreSpace_(status);
 
     BufStatus_ status_tmp = *status;
@@ -478,10 +451,7 @@ static flJson* flJsonBoolTrue_Parse_(BufStatus_* status, int depth) {
 }
 
 /* 解析false, 异常返回NULL */
-static flJson* flJsonBoolFalse_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
+static flJson* flJsonBoolFalse_Parse_(BufStatus_* status) {
     ignoreSpace_(status);
 
     BufStatus_ status_tmp = *status;
@@ -505,7 +475,7 @@ static flJson* flJsonBoolFalse_Parse_(BufStatus_* status, int depth) {
     return ret;  
 }
 
-/* 解析Object, 异常返回NULL */
+/* 解析Object, 异常返回NULL, json深度++ */
 static flJson* flJsonObject_Parse_(BufStatus_* status, int depth) {
     if (isTooDeep_(&depth)) {
         return NULL;
@@ -541,7 +511,7 @@ static flJson* flJsonObject_Parse_(BufStatus_* status, int depth) {
     bool flag_err = false;
     do {
         /* 解析key */
-        char* key = parseStr_(&status_tmp, depth);
+        char* key = parseStr_(&status_tmp);
         if (key == NULL) {
             flag_err = true;
             break;
@@ -601,7 +571,7 @@ static flJson* flJsonObject_Parse_(BufStatus_* status, int depth) {
     }
 }
 
-/* 解析Array, 异常返回NULL */
+/* 解析Array, 异常返回NULL json深度++ */
 static flJson* flJsonArray_Parse_(BufStatus_* status, int depth) {
     if (isTooDeep_(&depth)) {
         return NULL;
@@ -674,9 +644,6 @@ static flJson* flJsonArray_Parse_(BufStatus_* status, int depth) {
 
 /* 解析Json, 异常返回NULL */
 static flJson* flJson_Parse_(BufStatus_* status, int depth) {
-    if (isTooDeep_(&depth)) {
-        return NULL;
-    }
     ignoreSpace_(status);
 
     /* 此处为中转站, 无需创建临时状态 */
@@ -701,23 +668,23 @@ static flJson* flJson_Parse_(BufStatus_* status, int depth) {
         }
 
         if (double_flag) {
-            return flJsonDouble_Parse_(status, depth);
+            return flJsonDouble_Parse_(status);
         } else {
-            return flJsonLL_Parse_(status, depth);
+            return flJsonLL_Parse_(status);
         }
         
     } else if (head_ch == 'n') {
         /* Null */
-        return flJsonNull_Parse_(status, depth);
+        return flJsonNull_Parse_(status);
     } else if (head_ch == 't') {
         /* True */
-        return flJsonBoolTrue_Parse_(status, depth);
+        return flJsonBoolTrue_Parse_(status);
     } else if (head_ch == 'f'){
         /* False */
-        return flJsonBoolFalse_Parse_(status, depth);
+        return flJsonBoolFalse_Parse_(status);
     } else if (head_ch == '\"') {
         /* String */
-        return flJsonString_Parse_(status, depth);
+        return flJsonString_Parse_(status);
     } else if (head_ch == '{') {
         /* Object */
         return flJsonObject_Parse_(status, depth);
@@ -743,7 +710,7 @@ flJson* flJson_Parse(const char* str) {
         .tail = str + strlen(str),
         .now = str
     };
-    flJson* ret = flJson_Parse_(&start_status, 1);
+    flJson* ret = flJson_Parse_(&start_status, 0);
 
     ignoreSpace_(&start_status);
 
@@ -768,7 +735,7 @@ flJson* flJson_ParseWithLength(const char* str, size_t len) {
         .tail = str + len,
         .now = str
     };
-    flJson* ret = flJson_Parse_(&start_status, 1);
+    flJson* ret = flJson_Parse_(&start_status, 0);
 
     ignoreSpace_(&start_status);
 
