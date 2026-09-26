@@ -1,4 +1,6 @@
 #define _XOPEN_SOURCE 700
+#define FLJSON_TOOLS_
+
 #include "../include/flJson.h"
 #include <string.h>
 
@@ -231,7 +233,7 @@ bool* flJsonBool_Get(flJson* jb) {
  */
 
 /* 对字符串进行hash */
-static size_t hashString_(const char* str) {
+size_t hashString_(const char* str) {
     size_t res = 5381;
     int c;
     while (c = *str++) {
@@ -241,7 +243,7 @@ static size_t hashString_(const char* str) {
 }
 
 /* 将Object的内部信息 --> hm_map */
-static void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
+void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
     m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
     m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
     m->cmp_key = (hm_cmp)strcmp;
@@ -253,7 +255,7 @@ static void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
 }
 
 /* 将hm_map的内部信息 --> Object */
-static void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
+void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
     jo->valObject_.cap_ = m->len;
     jo->valObject_.size_ = m->size;
     jo->valObject_.entrys_ = (void*)m->buckets;
@@ -261,7 +263,7 @@ static void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
 }
 
 /* 将Array的内部信息 --> hm_arr */
-static void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
+void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
     a->capacity = ja->valArray_.cap_;
     a->dynamic_grow = true;
     a->free_val = (hm_free)flJson_UnRef;
@@ -270,7 +272,7 @@ static void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
 }
 
 /* 将hm_arr的内部信息 --> Array */
-static void hm_arr__TO__flArray_(hm_arr* a, flJson* ja) {
+void hm_arr__TO__flArray_(hm_arr* a, flJson* ja) {
     ja->valArray_.array_ = (flJson**)a->vals;
     ja->valArray_.cap_ = a->capacity;
     ja->valArray_.size_ = a->size;

@@ -117,4 +117,20 @@ extern void flJson_UnRef(flJson* j);
 extern flJson* flJson_Parse(const char* str);
 extern flJson* flJson_ParseWithLength(const char* str, size_t len);
 
+/* Json --> 字符串 */
+
+extern char* flJson_Dump(flJson* j);
+
+
+/* 私有工具 */
+#ifdef FLJSON_TOOLS_
+    #include <hm_map.h>
+    #include <hm_arr.h>
+    extern size_t hashString_(const char* str);
+    extern void flObject__TO__hm_map_(flJson* jo, hm_map* m);
+    extern void hm_map__TO__flObject_(hm_map* m, flJson* jo);
+    extern void flArray__TO__hm_arr_(flJson* ja, hm_arr* a);
+    extern void hm_arr__TO__flArray_(hm_arr* a, flJson* ja);
+#endif
+
 #endif
