@@ -18,16 +18,25 @@
 
 int main()
 {
+    flJson* info = flJsonObject_New();
 
-    /* 目前没有Json转字符串的函数, 暂时没有🙂 */
+    flJson* author = flJsonString_New("Flmpx");
+    flJsonObject_Add(info, "author", author);
+
+    char* str = flJson_Dump(info);
+    printf("%s\n", str);
+
+    flJson_UnRef(info);
+    flJson_UnRef(author);
+    free(str);
+
     return 0;
 }
-
 ```
   
 运行结果大概是这样  
 ```txt
-
+{"author":"Flmpx"}
 ```
 
 
@@ -39,15 +48,21 @@ int main()
 .
 ├── CMakeLists.txt          # CMake构建静态库
 ├── README.md               # 简介
+├── CHANGELOG.md            # 版本变更
 ├── docs            
-│   ├── project.md          # 项目文档
+│   ├── function.md         # 函数文档
+│   ├── develop.md          # 开发文档
 │   └── user.md             # 使用文档
 ├── include
 │   └── flJson.h            # 头文件
 ├── src
 │   ├── flJson.c            # 构建一个Json树的实现代码
+│   ├── flJsonDump.c        # Json树转字符串的实现代码
 │   └── flJsonParse.c       # 字符串转Json树的实现代码
-└── test                    # 测试目录
+└── test
+    ├── README.md           # 测试相关简介
+    ├── grammar             # 语法测试
+    └── speed               # 速度测试
 ```
 ### Json
 

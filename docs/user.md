@@ -117,10 +117,50 @@ int main()
 }
 ```
 
-运行结果  
+**运行结果**  
 ```txt
 Name: flmpx hy
 Age: 19
 Name: hhmm hy
 Age: 18
+```
+
+## Json树转字符串
+
+### 函数声明
+
+```c
+char* flJson_Dump(flJson* j);
+```
+
+### 例子
+
+**程序**  
+```c
+#include <flJson.h>
+
+int main() 
+{
+    flJson* info = flJsonObject_New();
+    flJson* name = flJsonString_New("Flmpx");
+    flJson* age = flJsonLL_New(19);
+
+    flJsonObject_Add(info, "name", name);
+    flJsonObject_Add(info, "age", age);
+
+    char* str = flJson_Dump(info);
+    printf("%s\n", str);
+
+    flJson_UnRef(info);
+    flJson_UnRef(name);
+    flJson_UnRef(age);
+    free(str);
+
+    return 0;
+}
+```
+
+**运行结果**  
+```txt
+{"age":19,"name":"Flmpx"}
 ```

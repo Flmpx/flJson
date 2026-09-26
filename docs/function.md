@@ -332,4 +332,27 @@ flJson* flJson_Parse(const char* str);
 flJson* flJson_ParseWithLength(const char* str, size_t len);
 ```
 
-指定需要解析的Json文本长度
+指定需要解析的Json文本长度  
+
+
+## Json树 --> 字符串
+
+- 转字符串函数具有递归深度限制, 不可以输出嵌套过深的Json树, 否则返回NULL  
+
+### 输出字符串
+
+```c
+/**
+ * 输出Json为字符串
+ * 
+ * @return 输出异常返回NULL
+ */
+char* flJson_Dump(flJson* j);
+```
+**返回的字符串需要通过free函数进行释放**  
+
+
+异常包括但不限于: 
+- 字符串中有非可见字符且不在json标准内
+- 递归深度过深
+- 字符串拼接出错(内存不足)
