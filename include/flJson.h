@@ -22,6 +22,12 @@ typedef struct flJson flJson;
 /* 全局函数返回状态码 */
 typedef enum flRet flRet;
 
+/* 对象迭代器 */
+typedef struct flJsonObjectIter flJsonObjectIter;
+
+/* 数组迭代器 */
+typedef struct flJsonArrayIter flJsonArrayIter;
+
 enum flJsonType {
     flJsonTypeLL            = 1L << 0,          // 整型
     flJsonTypeDouble        = 1L << 1,          // 浮点型
@@ -68,6 +74,19 @@ struct flJson {
 };
 
 
+struct flJsonObjectIter {
+    void* entrys_;
+    int* status_;
+    size_t cap_;
+    size_t idx_;
+};
+
+struct flJsonArrayIter {
+    flJson** array_;
+    size_t size_;
+    size_t idx_;
+};
+
 /* 不同类型Json的创建 */
 
 extern flJson* flJsonLL_New(long long ll);
@@ -108,6 +127,11 @@ extern flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx);
 extern flJson* flJsonArray_Get(flJson* ja, size_t idx);
 extern flRet flJsonArray_Del(flJson* ja, size_t idx);
 
+extern void flJsonArrayIter_Init(flJsonArrayIter* jai, flJson* ja);
+extern bool flJsonArrayIter_HasCur(flJsonArrayIter* jai);
+extern flJson* flJsonArrayIter_Cur(flJsonArrayIter* jai);
+extern void flJsonArrayIter_MoveNext(flJsonArrayIter* jai);
+
 /* JsonObject的操作 */
 
 extern size_t flJsonObject_Size(flJson* jo);
@@ -115,6 +139,11 @@ extern flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j);
 extern flJson* flJsonObject_Get(flJson* jo, const char* key);
 extern flRet flJsonObject_Del(flJson* jo, const char* key);
 
+extern void flJsonObjectIter_Init(flJsonObjectIter* joi, flJson* jo);
+extern bool flJsonObjectIter_HasCur(flJsonObjectIter* joi);
+extern flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi);
+extern const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi);
+extern void flJsonObjectIter_MoveNext(flJsonObjectIter* joi);
 
 /* Unref解引Json */
 
@@ -129,17 +158,5 @@ extern flJson* flJson_ParseWithLength(const char* str, size_t len);
 /* Json --> 字符串 */
 
 extern char* flJson_Dump(flJson* j);
-
-
-/* 私有工具 */
-#ifdef FLJSON_TOOLS_
-    #include <hm_map.h>
-    #include <hm_arr.h>
-    extern size_t hashString_(const char* str);
-    extern void flObject__TO__hm_map_(flJson* jo, hm_map* m);
-    extern void hm_map__TO__flObject_(hm_map* m, flJson* jo);
-    extern void flArray__TO__hm_arr_(flJson* ja, hm_arr* a);
-    extern void hm_arr__TO__flArray_(hm_arr* a, flJson* ja);
-#endif
 
 #endif

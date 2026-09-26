@@ -1,5 +1,3 @@
-#define FLJSON_TOOLS_
-
 #include "../include/flJson.h"
 #include <string.h>
 
@@ -125,19 +123,16 @@ static flRet flJsonObject_Dump_(hm_str* out, flJson* jo, int depth) {
         return flRet_Error;
     }
 
-    hm_map map;
-    flObject__TO__hm_map_(jo, &map);
-    hm_map_iter iter;
-    hm_map_iter_init(&iter, &map);
+    flJsonObjectIter it;
+    flJsonObjectIter_Init(&it, jo);
 
     size_t i = 0;
-    size_t size = map.size;
+    size_t size = flJsonObject_Size(jo);
 
-    while (hm_map_iter_has_next(&iter)) {
-        hm_map_entry tmp = hm_map_iter_next(&iter); 
+    while (flJsonObjectIter_HasCur(&it)) {
 
         /* key */
-        if (dumpStr_(out, tmp.key) != flRet_Suc) {
+        if (dumpStr_(out, flJsonObjectIter_CurKey(&it)) != flRet_Suc) {
             return flRet_Error;
         }
         
@@ -147,7 +142,7 @@ static flRet flJsonObject_Dump_(hm_str* out, flJson* jo, int depth) {
         }
 
         /* json */
-        if (flJson_Dump_(out, tmp.val, depth) != flRet_Suc) {
+        if (flJson_Dump_(out, flJsonObjectIter_CurVal(&it), depth) != flRet_Suc) {
             return flRet_Error;
         }
 
@@ -157,6 +152,7 @@ static flRet flJsonObject_Dump_(hm_str* out, flJson* jo, int depth) {
         }
         
         i++;
+        flJsonObjectIter_MoveNext(&it);
     }
 
     if (hm_str_append(out, "}") != hm_str_ret_suc) {
@@ -176,21 +172,26 @@ static flRet flJsonArray_Dump_(hm_str* out, flJson* ja, int depth) {
         return flRet_Error;
     }
 
-    size_t size = ja->valArray_.size_;
-    for (size_t i = 0; i < size; i++) {
-        flJson* j = flJsonArray_Get(ja, i);
-        
-        /* 输出异常 */
-        if (flJson_Dump_(out, j, depth) != flRet_Suc) {
+    flJsonArrayIter it;
+    flJsonArrayIter_Init(&it, ja);
+
+    size_t i = 0;
+    size_t size = flJsonArray_Size(ja);
+
+    while (flJsonArrayIter_HasCur(&it)) {
+
+        /* json */
+        if (flJson_Dump_(out, flJsonArrayIter_Cur(&it), depth)) {
             return flRet_Error;
         }
 
-        flJson_UnRef(j);
-
-        /* 不是最后一个的后面要加 `,` */
+        /* , */
         if (i != size - 1 && hm_str_append(out, ",") != hm_str_ret_suc) {
             return flRet_Error;
         }
+
+        i++;
+        flJsonArrayIter_MoveNext(&it);
     }
 
     if (hm_str_append(out, "]") != hm_str_ret_suc) {

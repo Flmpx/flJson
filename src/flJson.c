@@ -1,5 +1,4 @@
 #define _XOPEN_SOURCE 700
-#define FLJSON_TOOLS_
 
 #include "../include/flJson.h"
 #include <string.h>
@@ -229,11 +228,11 @@ bool* flJsonBool_Get(flJson* jb) {
 
 
 /**
- * 用于hm_map <-> flObject, hm_arr <-> flArray 之间的内容转化
+ * 用于hm_map <-> flObject, hm_arr <-> flArray, hm_map_iter <-> flObjectIter 之间的内容转化
  */
 
 /* 对字符串进行hash */
-size_t hashString_(const char* str) {
+static inline size_t hashString_(const char* str) {
     size_t res = 5381;
     int c;
     while (c = *str++) {
@@ -243,7 +242,7 @@ size_t hashString_(const char* str) {
 }
 
 /* 将Object的内部信息 --> hm_map */
-void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
+static inline void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
     m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
     m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
     m->cmp_key = (hm_cmp)strcmp;
@@ -255,7 +254,7 @@ void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
 }
 
 /* 将hm_map的内部信息 --> Object */
-void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
+static inline void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
     jo->valObject_.cap_ = m->len;
     jo->valObject_.size_ = m->size;
     jo->valObject_.entrys_ = (void*)m->buckets;
@@ -263,7 +262,7 @@ void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
 }
 
 /* 将Array的内部信息 --> hm_arr */
-void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
+static inline void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
     a->capacity = ja->valArray_.cap_;
     a->dynamic_grow = true;
     a->free_val = (hm_free)flJson_UnRef;
@@ -272,10 +271,28 @@ void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
 }
 
 /* 将hm_arr的内部信息 --> Array */
-void hm_arr__TO__flArray_(hm_arr* a, flJson* ja) {
+static inline void hm_arr__TO__flArray_(hm_arr* a, flJson* ja) {
     ja->valArray_.array_ = (flJson**)a->vals;
     ja->valArray_.cap_ = a->capacity;
     ja->valArray_.size_ = a->size;
+}
+
+
+
+/* 将ObjectIter中的内部信息 --> hm_arr_iter */
+static inline void flObjectIter__TO__hm_map_iter_(flJsonObjectIter* joi, hm_map_iter* mi) {
+    mi->buckets = joi->entrys_;
+    mi->buckets_status = (hm_map_entry_status*)joi->status_;
+    mi->index = joi->idx_;
+    mi->len = joi->cap_;
+}
+
+/* 将hm_arr_iter中的内部信息 --> ObjectIter */
+static inline void hm_map_iter__TO__flObjectIter_(hm_map_iter* mi, flJsonObjectIter* joi) {
+    joi->entrys_ = (void*)mi->buckets;
+    joi->status_ = (int*)mi->buckets_status;
+    joi->idx_ = mi->index;
+    joi->cap_ = mi->len;
 }
 
 
@@ -378,6 +395,50 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
     } else {
         ret->refCount_++;
         return ret;
+    }
+}
+
+
+/**
+ * 初始化数组型Json迭代器
+ */
+void flJsonArrayIter_Init(flJsonArrayIter* jai, flJson* ja) {
+    jai->array_ = ja->valArray_.array_;
+    jai->size_ = ja->valArray_.size_;
+    jai->idx_ = 0;
+}
+
+
+/**
+ * 数组迭代器当前指向是否有效
+ */
+bool flJsonArrayIter_HasCur(flJsonArrayIter* jai) {
+    return jai->idx_ < jai->size_;
+} 
+
+
+/**
+ * 获取当前数组迭代器所指向的Json
+ * 
+ * @note - 返回的Json不增加引用次数
+ * 
+ * @return - 如果当前指向无效, 返回NULL
+ */
+flJson* flJsonArrayIter_Cur(flJsonArrayIter* jai) {
+    if (flJsonArrayIter_HasCur(jai)) {
+        return jai->array_[jai->idx_];
+    } else {
+        return NULL;
+    }
+}
+
+
+/**
+ * 将数组迭代器指向移动到下一个位置
+ */
+void flJsonArrayIter_MoveNext(flJsonArrayIter* jai) {
+    if (jai->idx_ < jai->size_) {
+        (jai->idx_)++;
     }
 }
 
@@ -505,6 +566,74 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
         return ret;
     }
 }
+
+
+/**
+ * 初始化对象的迭代器
+ */
+void flJsonObjectIter_Init(flJsonObjectIter* joi, flJson* jo) {
+    joi->cap_ = jo->valObject_.cap_;
+    joi->entrys_ = jo->valObject_.entrys_;
+    joi->idx_ = 0;
+    joi->status_ = jo->valObject_.status_;
+}
+
+
+/**
+ * 对象迭代器当前指向是否有效
+ */
+bool flJsonObjectIter_HasCur(flJsonObjectIter* joi) {
+    /* 由于hashTable不支持随机访问, 所有不能简单的判断当前指向是否有效 */
+
+    hm_map_iter it;
+    flObjectIter__TO__hm_map_iter_(joi, &it);
+    /* has_next函数会自动往后面移动迭代器指向, 如果连后面(包括当前指向)都没有有效值, 那直接返回false */
+    bool ret = hm_map_iter_has_next(&it);
+    hm_map_iter__TO__flObjectIter_(&it, joi);
+
+    return ret;
+}
+
+
+/**
+ * 获取当前对象迭代器所指向条目的Json
+ * 
+ * @note - 返回的Json不增加引用次数
+ * 
+ * @return - 如果当前指向无效, 返回NULL
+ */
+flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi) {
+    if (flJsonObjectIter_HasCur(joi)) {
+        return ((hm_map_entry*)joi->entrys_)[joi->idx_].val;
+    } else {
+        return NULL;
+    }
+}
+
+/**
+ * 获取当前对象迭代器所指向条目的key
+ * 
+ * @return - 如果当前指向无效, 返回NULL
+ */
+const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi) {
+    if (flJsonObjectIter_HasCur(joi)) {
+        return ((hm_map_entry*)joi->entrys_)[joi->idx_].key;
+    } else {
+        return NULL;
+    }
+}
+
+/**
+ * 将对象迭代器指向移动到下一个位置
+ */
+void flJsonObjectIter_MoveNext(flJsonObjectIter* joi) {
+    hm_map_iter iter;
+    flObjectIter__TO__hm_map_iter_(joi, &iter);
+    /* 直接忽略这里的返回值, 只需要它的移动功能 */
+    hm_map_iter_next(&iter);
+    hm_map_iter__TO__flObjectIter_(&iter, joi);
+}
+
 
 
 
