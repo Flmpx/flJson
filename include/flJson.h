@@ -4,6 +4,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+
+
+#define FL_JSON_VERSION_MAJOR 0
+#define FL_JSON_VERSION_MINOR 1
+#define FL_JSON_VERSION_PATCH 6
+#define FL_JSON_VERSION "0.1.6"
+
+
+
 /* Json的类型(总共七种) */
 typedef enum flJsonType flJsonType;
 

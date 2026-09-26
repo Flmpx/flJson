@@ -129,7 +129,7 @@ include(FetchContent)
 FetchContent_Declare(
     flJson
     GIT_REPOSITORY https://github.com/Flmpx/flJson.git  # or git@github.com:Flmpx/flJson.git
-    GIT_TAG v0.0.0      # 暂时没有版本
+    GIT_TAG v0.1.6
 )
 
 FetchContent_MakeAvailable(flJson)
