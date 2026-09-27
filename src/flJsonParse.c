@@ -19,6 +19,7 @@
  * 在解析的过程中, 如果要查看下一个或一段字符的内容, 首先要进行判断是否越界
  * 比如解析 `true` 那就的在解析之前写上 `if (now + 4 > tail) return NULL;`
  * 
+ * 在部分逻辑简单的判断字符的循环中, 使用临时char变量来判断来减少指针解引次数
  ***************************************************************************/
 
 
@@ -36,8 +37,12 @@ static flJson* flJson_Parse_(BufStatus_* status, int depth);
 
 /* 忽略空白字符 */
 static inline void ignoreSpace_(BufStatus_* status) {
+    char ch = *(status->now);
     while (status->now < status->tail && 
-          (*(status->now) == '\n' || *(status->now) == '\t' || *(status->now) == '\n' || *(status->now) == ' ' || *(status->now) == '\r')) status->now++;
+          (ch == '\n' || ch == '\t' || ch == '\n' || ch == ' ' || ch == '\r')) {
+            status->now++;
+            ch = *(status->now);
+    }
 }
 
 /* 判断递归深度是否过深 */
@@ -247,7 +252,9 @@ static flJson* flJsonLL_Parse_(BufStatus_* status) {
     
     /* 由于strtoll函数没法根据len来解析数字, 故创建小型缓冲区 */
     const char* tmp = status_tmp.now;
-    char ch = *tmp;
+
+    /* 创建临时char变量来判断 */
+    char ch = *tmp;     
     while (tmp < status_tmp.tail && 
           ((ch >= '0' && ch <= '9') || ch == '-')) {
             tmp++;
@@ -308,7 +315,9 @@ static flJson* flJsonDouble_Parse_(BufStatus_* status) {
 
     /* 由于strtod函数没法根据len来解析数字, 故创建小型缓冲区 */
     const char* tmp = status_tmp.now;
-    char ch = *tmp;
+
+    /* 创建临时char变量来判断 */
+    char ch = *tmp;         
     while (tmp < status_tmp.tail && 
           ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' || ch == 'e' || ch == 'E' || ch == '.')) {
             tmp++;
@@ -342,9 +351,15 @@ static flJson* flJsonDouble_Parse_(BufStatus_* status) {
     }
 
     /* 判断.后面必须是数字以及e/E后哦吗必须有至少一个数字(可以有+-) */
+
+    /* 使用临时char变量来判断 */
     ch = *now;
-    while ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' || ch == 'e' || ch == 'E' || ch == '.') {
-        if (ch == '.') {
+    while (true) {
+
+        if ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' ) {
+            now++;
+            ch = *now;
+        } else if (ch == '.') {
             now++;
             ch = *now;
             /* 小数点后面必须要有数 */
@@ -357,15 +372,17 @@ static flJson* flJsonDouble_Parse_(BufStatus_* status) {
             now++;
             ch = *now;
             if (ch == '+' || ch == '-') now++;
+
             ch = *now;
             /* e/E(+-)后面必须要有数 */
             if (!(ch >= '0' && ch <= '9')) {
                 free(start);
                 return NULL;
             }
+        } else {
+            break;
         }
-        now++;
-        ch = *now;
+        
     }
 
 
