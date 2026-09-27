@@ -31,10 +31,21 @@ target_link_libraries(flJson PUBLIC hmfocx)
 
 target_include_directories(flJson PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-option(BUILD_TEST "Run all flJsonTest" OFF)
 
-if (BUILD_TEST) 
+option(BUILD_TEST "Run flJson Test" OFF)        #总开关
+option(GRAMMAR_TEST "Run GrammarTest" OFF)   
+option(SPEED_TEST "Run SpeedTest" OFF)
+
+
+if (BUILD_TEST)         # 开启测试
     enable_testing()
-    add_subdirectory(test/grammar)
-    add_subdirectory(test/speed)
+
+    if (GRAMMAR_TEST)       # 语法测试
+        add_subdirectory(test/grammar)
+    endif()
+
+    if (SPEED_TEST)         # 速度测试
+        add_subdirectory(test/speed)
+    endif()
+
 endif()

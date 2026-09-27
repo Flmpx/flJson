@@ -6,13 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
-  flJson_GrammarTest:
-    # 语法测试
-    name: flJson_GrammarTest😆
+  flJson_GrammarTest:       # 语法测试
+    name: flJson_GrammarTest
     runs-on: ubuntu-latest
 
     steps:
@@ -21,19 +17,18 @@ jobs:
         submodules: recursive
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON     # 使用BUILD_TEST=ON开启测试
+      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON -DGRAMMAR_TEST=ON    # 使用BUILD_TEST=ON开启测试, 并使用GRAMMAR_TEST开启语法测试
 
     - name: Build       
-      run: cmake --build ${{github.workspace}}/bin --target flJson_GrammarTest_Exe --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/bin --target flJson_GrammarTest_Exe --config Debug
 
     - name: Test Json Grammar
       working-directory: ${{github.workspace}}/bin
-      run: ctest -R flJson_GrammarTest_Exe -V        # 需要展示详情
+      run: ctest -R flJson_GrammarTest_Exe -V                # 需要展示详情
 
 
-  flJson_SpeedTest:
-    # 速度测试
-    name: flJson_SpeedTest😆
+  flJson_SpeedTest:                 # 速度测试
+    name: flJson_SpeedTest
     runs-on: ubuntu-latest
 
     steps:
@@ -42,10 +37,10 @@ jobs:
         submodules: recursive
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON     # 使用BUILD_TEST=ON开启测试
+      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON -DSPEED_TEST=ON    # 使用BUILD_TEST=ON开启测试, 并使用SPEED_TEST开启速度测试
 
     - name: Build       
-      run: cmake --build ${{github.workspace}}/bin --target flJson_SpeedTest_Exe --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/bin --target flJson_SpeedTest_Exe --config Release
 
     - name: Test Json Speed
       working-directory: ${{github.workspace}}/bin

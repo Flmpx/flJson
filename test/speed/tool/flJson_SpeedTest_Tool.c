@@ -46,7 +46,7 @@ static void PRINT_SPEED_RESULT(double timeDiff, size_t fileSize, size_t runCount
 
     printf("| Size     : %gMB   \n", size);
     printf("| Oper Cnt : %zu    \n", runCount);
-    printf("| Cost Tiem: %gs    \n", time);
+    printf("| Cost Time: %gs    \n", time);
     printf("| Speed    : %gMB/S \n", size * runCount / time);
     printf("\n");
 
