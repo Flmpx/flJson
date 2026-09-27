@@ -2,9 +2,9 @@ name: Test for flJson
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "pref/parse" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "pref/parse" ]
 
 env:
   BUILD_TYPE: Release

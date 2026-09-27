@@ -17,8 +17,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(hmfocx)
 
-set(CMAKE_BUILD_TYPE Debug)
-
 # 所有的c文件在src目录中
 file(GLOB FL_SRC_SOURCE_LIST ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 

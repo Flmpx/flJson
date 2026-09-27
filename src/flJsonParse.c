@@ -247,9 +247,11 @@ static flJson* flJsonLL_Parse_(BufStatus_* status) {
     
     /* 由于strtoll函数没法根据len来解析数字, 故创建小型缓冲区 */
     const char* tmp = status_tmp.now;
+    char ch = *tmp;
     while (tmp < status_tmp.tail && 
-          ((*tmp >= '0' && *tmp <= '9') || *tmp == '-')) {
+          ((ch >= '0' && ch <= '9') || ch == '-')) {
             tmp++;
+            ch = *tmp;
     }
     char* start = (char*)malloc(tmp - status_tmp.now + 1);
     if (start == NULL) {
@@ -306,9 +308,11 @@ static flJson* flJsonDouble_Parse_(BufStatus_* status) {
 
     /* 由于strtod函数没法根据len来解析数字, 故创建小型缓冲区 */
     const char* tmp = status_tmp.now;
+    char ch = *tmp;
     while (tmp < status_tmp.tail && 
-          ((*tmp >= '0' && *tmp <= '9') || *tmp == '-' || *tmp == '+' || *tmp == 'e' || *tmp == 'E' || *tmp == '.')) {
+          ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' || ch == 'e' || ch == 'E' || ch == '.')) {
             tmp++;
+            ch = *tmp;
     }
     char* start = (char*)malloc(tmp - status_tmp.now + 1);
     if (start == NULL) {
@@ -338,26 +342,30 @@ static flJson* flJsonDouble_Parse_(BufStatus_* status) {
     }
 
     /* 判断.后面必须是数字以及e/E后哦吗必须有至少一个数字(可以有+-) */
-    while ((*now >= '0' && *now <= '9') || *now == '-' || *now == '+' || *now == 'e' || *now == 'E' || *now == '.') {
-        if (*now == '.') {
+    ch = *now;
+    while ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' || ch == 'e' || ch == 'E' || ch == '.') {
+        if (ch == '.') {
             now++;
+            ch = *now;
             /* 小数点后面必须要有数 */
-            if (!(*now >= '0' && *now <= '9')) {
+            if (!(ch >= '0' && ch <= '9')) {
                 free(start);
                 return NULL;
             }
 
-        } else if (*now == 'e' || *now == 'E') {
+        } else if (ch == 'e' || ch == 'E') {
             now++;
-            if (*now == '+' || *now == '-') now++;
-            
+            ch = *now;
+            if (ch == '+' || ch == '-') now++;
+            ch = *now;
             /* e/E(+-)后面必须要有数 */
-            if (!(*now >= '0' && *now <= '9')) {
+            if (!(ch >= '0' && ch <= '9')) {
                 free(start);
                 return NULL;
             }
         }
         now++;
+        ch = *now;
     }
 
 
@@ -658,50 +666,46 @@ static flJson* flJson_Parse_(BufStatus_* status, int depth) {
 
     char head_ch = *status->now;
 
-    if ((head_ch >= '0' && head_ch <= '9') || head_ch == '-') {
-        
-        /* 判断是否位浮点数 */
-        bool double_flag = false;
-        const char* tmp = status->now;
-        while (tmp < status->tail && 
-              ((*tmp >= '0' && *tmp <= '9') || *tmp == '-' || *tmp == '+' || *tmp == 'e' || *tmp == 'E' || *tmp == '.')) {
-
-                if (*tmp == 'e' || *tmp == 'E' || *tmp == '.') {
-                    double_flag = true;
-                    break;
+    switch (head_ch) {
+        case 'n' : return flJsonNull_Parse_         (status);           // None
+        case 't' : return flJsonBoolTrue_Parse_     (status);           // True
+        case 'f' : return flJsonBoolFalse_Parse_    (status);           // False
+        case '\"': return flJsonString_Parse_       (status);           // String
+        case '{' : return flJsonObject_Parse_       (status, depth);    // Object
+        case '[' : return flJsonArray_Parse_        (status, depth);    // Array
+        default  :
+            /* Number */
+            if ((head_ch >= '0' && head_ch <= '9') || head_ch == '-') {
+                /* 判断是否位浮点数 */
+                bool double_flag = false;
+                const char* tmp = status->now;
+                
+                char ch = *tmp;
+                while (tmp < status->tail) {
+                    if ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+') {
+                        tmp++;
+                        ch = *tmp;
+                        continue;
+                    } else if (ch == 'e' || ch == 'E' || ch == '.') {
+                        double_flag = true;
+                        break;
+                    } else {
+                        break;
+                    }
                 }
-                tmp++;
-        }
 
-        if (double_flag) {
-            return flJsonDouble_Parse_(status);
-        } else {
-            return flJsonLL_Parse_(status);
-        }
-        
-    } else if (head_ch == 'n') {
-        /* Null */
-        return flJsonNull_Parse_(status);
-    } else if (head_ch == 't') {
-        /* True */
-        return flJsonBoolTrue_Parse_(status);
-    } else if (head_ch == 'f'){
-        /* False */
-        return flJsonBoolFalse_Parse_(status);
-    } else if (head_ch == '\"') {
-        /* String */
-        return flJsonString_Parse_(status);
-    } else if (head_ch == '{') {
-        /* Object */
-        return flJsonObject_Parse_(status, depth);
-    } else if (head_ch == '[') {
-        /* Array */
-        return flJsonArray_Parse_(status, depth);
-    } else {
-        /* Error */
-        return NULL;
+                if (double_flag) {
+                    return flJsonDouble_Parse_(status);
+                } else {
+                    return flJsonLL_Parse_(status);
+                }
+                
+            }
+
+            /* Error */
+            return NULL;
+            break;
     }
-
 }
 
 
