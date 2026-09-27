@@ -5,9 +5,6 @@ set(flJSON_TARGET flJson_GrammarTest)
 
 project(${flJSON_TARGET})
 
-# 采用Debug模式构建
-set(CMAKE_BUILD_TYPE Debug)
-
 # 测试文件
 set(${flJSON_TARGET}_SRC ${CMAKE_CURRENT_SOURCE_DIR}/${flJSON_TARGET}.c)
 
