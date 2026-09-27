@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
 #ifndef FL_JSON_H
 #define FL_JSON_H
 

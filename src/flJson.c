@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
+
 #define _XOPEN_SOURCE 700
 
 #include "../include/flJson.h"

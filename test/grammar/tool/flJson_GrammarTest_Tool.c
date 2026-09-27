@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <flJson.h>

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
+
 #ifndef FLJSON_GRAMMARTEST_TOOL_H
 #define FLJSON_GRAMMARTEST_TOOL_H
 

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
 #ifndef FLJSON_SPEEDTEST_TOOL_H
 #define FLJSON_SPEEDTEST_TOOL_H
 

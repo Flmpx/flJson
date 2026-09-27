@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
 #include "tool/flJson_GrammarTest_Tool.h"
 #include <dirent.h>
 #include <string.h>

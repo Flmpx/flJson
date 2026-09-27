@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Flmpx
+ * Licensed under MIT (see LICENSE).
+ */
+
 #define _POSIX_C_SOURCE 199309L
 
 #include <flJson.h>
