@@ -3,7 +3,7 @@
 
 ## 不同类型的Json的相关函数
 
-Json类型内部具备引用计数, 调用会返回Json*类型的函数都会增加返回的Json的计数值(**迭代器除外**), 故使用完之后调用UnRef函数进行解除引用  
+Json类型内部具备引用计数, 当调用New函数获取一个新的Json节点时(解析字符串相当于获取一个新的Json节点)或者将一个Json节点插入到其他容器(数组或者对象)中时会增加引用计数, 其他返回flJson*的函数不会增加引用计数, **故每一个New函数都该有一个对应的UnRef函数**  
   
 Json中包含字符串类型的(String类型Json, Object中的key)均不支持\0(\u0000)存入, 即不支持存入字符串长度  
 
@@ -181,7 +181,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx);
 /**
  * 获取指定位置的flJson
  * 
- * @note 返回后flJson的引用次数加一, 使用完后使用flJson_UnRef函数解引
+ * @note 不增加返回的Json节点的引用计数
  * 
  * @return 如果下标不合法, 返回NULL
  * @return 如果类型不对, 返回NULL
@@ -288,7 +288,7 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j);
 /**
  * 获取对象中的指定键对应的flJson
  * 
- * @note 返回后flJson的引用次数加一, 使用完后使用flJson_UnRef函数解引
+ * @note 不增加返回的Json节点的引用计数
  * 
  * @return 如果键不存在, 返回NULL
  * @return 如果类型不对, 返回NULL
@@ -354,8 +354,7 @@ void flJsonObjectIter_MoveNext(flJsonObjectIter* joi);
 >  [!Note]
 >  `New` 用于创建Json节点 
 >  `Get` 用于获取内部数据, 同时由于返回的是指针类型, 可以对数据进行修改, 如果修改, 引用它的所有容器得到的数据都是修改之后的
->  迭代器返回的Json节点不会增加其引用计数
-
+>  每次创建或者获得一个**新**的Json节点时, 引用计数++
 
 ## `UnRef` 解引函数
 

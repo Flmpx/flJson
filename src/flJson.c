@@ -375,7 +375,7 @@ flRet flJsonArray_Del(flJson* ja, size_t idx) {
 /**
  * 获取指定位置的flJson
  * 
- * @note - 返回后flJson的引用次数加一, 使用完后使用flJson_UnRef函数解引
+ * @note - 不增加返回的Json节点的引用计数
  * 
  * @return - 如果下标不合法, 返回NULL
  * @return - 如果类型不对, 返回NULL
@@ -393,7 +393,6 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
     if (ret == NULL) {
         return NULL;
     } else {
-        ret->refCount_++;
         return ret;
     }
 }
@@ -544,7 +543,7 @@ flRet flJsonObject_Del(flJson* jo, const char* key) {
 /**
  * 获取对象中的指定键对应的flJson
  * 
- * @note - 返回后flJson的引用次数加一, 使用完后使用flJson_UnRef函数解引
+ * @note - 不增加返回的Json节点的引用计数
  * 
  * @return - 如果键不存在, 返回NULL
  * @return - 如果类型不对, 返回NULL
@@ -562,7 +561,6 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
     if (ret == NULL) {
         return NULL;
     } else {
-        ret->refCount_++;
         return ret;
     }
 }

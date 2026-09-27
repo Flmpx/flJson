@@ -98,11 +98,6 @@ void getPersonInfo(flJson* obj) {
 
     printf("Name: %s %s\n", firstName, lastName);
     printf("Age: %lld\n", *age);
-
-    flJson_UnRef(obj);
-    flJson_UnRef(firstNameJson);
-    flJson_UnRef(lastNameJson);
-    flJson_UnRef(ageJson);
 }
 
 int main() 
