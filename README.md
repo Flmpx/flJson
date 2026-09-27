@@ -114,7 +114,7 @@ struct flJson {
 };
 ```
 
-全局只有一个结构体, 就是 `flJson`, 我相信会很容易使用
+全局有flJson, flJsonObjectIter 和 flJsonArrayIter 这三个结构体, 由于并不需要过度了解结构体内部的字段, 我相信会很容易使用  
 
 ## 构建
 

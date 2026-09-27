@@ -164,3 +164,100 @@ int main()
 ```txt
 {"age":19,"name":"Flmpx"}
 ```
+
+
+## 迭代
+
+库提供了对数组和对象类型的Json进行迭代的功能  
+使用迭代器的一般流程是:  
+- 初始化迭代器
+- 判断当前迭代器索引是否有效
+- 获取当前迭代器索引的值
+- 将迭代器移至下一个位置
+
+### 数组迭代
+
+**程序**  
+```c
+#include <flJson.h>
+
+void print(flJson* jll) {
+    long long* ll = flJsonLL_Get(jll);
+    printf("%lld ", *ll);
+} 
+
+int main() 
+{
+    flJson* arr = flJsonArray_New();
+    for (int i = 0; i < 10; i++) {
+        flJson* ele = flJsonLL_New(i * 10);
+        flJsonArray_Add(arr, ele, flJsonArray_Size(arr));
+
+        flJson_UnRef(ele);
+    }
+
+    /* 迭代 */
+    flJsonArrayIter it;
+    flJsonArrayIter_Init(&it, arr);
+    while (flJsonArrayIter_HasCur(&it)) {
+        print(flJsonArrayIter_Cur(&it));
+        flJsonArrayIter_MoveNext(&it);
+    }
+    printf("\n");
+
+    flJson_UnRef(arr);
+
+    return 0;
+}
+```
+
+**运行结果**
+
+```txt
+0 10 20 30 40 50 60 70 80 90
+```
+
+
+### 对象迭代
+
+**程序**  
+```c
+#include <flJson.h>
+
+void print(const char* key, flJson* js) {
+    printf("key: %s, val: %s\n", key, flJsonString_Get(js));
+} 
+
+int main() 
+{
+    flJson* obj = flJsonObject_New();
+    const char* keys[] = {"name", "age", "age"};
+    const char* jsons[] = {"Flmpx", "19", "none"};
+    int cnt = sizeof(keys) / sizeof(const char*);
+
+    for (int i = 0; i < cnt; i++) {
+        flJson* json = flJsonString_New(jsons[i]);
+        flJsonObject_Add(obj, keys[i], json);
+
+        flJson_UnRef(json);
+    }
+
+    flJsonObjectIter it;
+    flJsonObjectIter_Init(&it, obj);
+    while (flJsonObjectIter_HasCur(&it)) {
+        print(flJsonObjectIter_CurKey(&it), flJsonObjectIter_CurVal(&it));
+        flJsonObjectIter_MoveNext(&it);
+    }
+
+    flJson_UnRef(obj);
+
+    return 0;
+}
+```
+
+**运行结果**
+
+```txt
+key: age, val: none
+key: name, val: Flmpx
+```

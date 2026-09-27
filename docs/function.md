@@ -3,7 +3,7 @@
 
 ## 不同类型的Json的相关函数
 
-Json类型内部具备引用计数, 调用会返回Json*类型的函数都会增加返回的Json的计数值, 故使用完之后调用UnRef函数进行解除引用  
+Json类型内部具备引用计数, 调用会返回Json*类型的函数都会增加返回的Json的计数值(**迭代器除外**), 故使用完之后调用UnRef函数进行解除引用  
   
 Json中包含字符串类型的(String类型Json, Object中的key)均不支持\0(\u0000)存入, 即不支持存入字符串长度  
 
@@ -204,6 +204,36 @@ flRet flJsonArray_Del(flJson* ja, size_t idx);
 
 该函数将当前下标的Json解引后, 将大于这个下标的Json往前移一个位置
 
+> **迭代**
+
+```c
+/**
+ * 初始化数组型Json迭代器
+ */
+void flJsonArrayIter_Init(flJsonArrayIter* jai, flJson* ja);
+
+/**
+ * 数组迭代器当前指向是否有效
+ */
+bool flJsonArrayIter_HasCur(flJsonArrayIter* jai);
+
+/**
+ * 获取当前数组迭代器所指向的Json
+ * 
+ * @note 返回的Json不增加引用次数
+ * 
+ * @return 如果当前指向无效, 返回NULL
+ */
+flJson* flJsonArrayIter_Cur(flJsonArrayIter* jai);
+
+/**
+ * 将数组迭代器指向移动到下一个位置
+ */
+void flJsonArrayIter_MoveNext(flJsonArrayIter* jai);
+```
+
+以上的函数最好一起通过一个循环使用, 而不是分开使用  
+
 
 
 ### `Object` 类型的Json
@@ -280,6 +310,43 @@ flJson* flJsonObject_Get(flJson* jo, const char* key);
 flRet flJsonObject_Del(flJson* jo, const char* key);
 ```
 
+> **迭代**
+
+```c
+/**
+ * 初始化对象的迭代器
+ */
+void flJsonObjectIter_Init(flJsonObjectIter* joi, flJson* jo);
+
+/**
+ * 对象迭代器当前指向是否有效
+ */
+bool flJsonObjectIter_HasCur(flJsonObjectIter* joi);
+
+/**
+ * 获取当前对象迭代器所指向条目的key
+ * 
+ * @return 如果当前指向无效, 返回NULL
+ */
+const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi);
+
+/**
+ * 获取当前对象迭代器所指向条目的Json
+ * 
+ * @note 返回的Json不增加引用次数
+ * 
+ * @return 如果当前指向无效, 返回NULL
+ */
+flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi);
+
+/**
+ * 将对象迭代器指向移动到下一个位置
+ */
+void flJsonObjectIter_MoveNext(flJsonObjectIter* joi);
+```
+
+以上的函数最好一起通过一个循环使用, 而不是分开使用  
+
 
 
 ### 总结
@@ -287,6 +354,7 @@ flRet flJsonObject_Del(flJson* jo, const char* key);
 >  [!Note]
 >  `New` 用于创建Json节点 
 >  `Get` 用于获取内部数据, 同时由于返回的是指针类型, 可以对数据进行修改, 如果修改, 引用它的所有容器得到的数据都是修改之后的
+>  迭代器返回的Json节点不会增加其引用计数
 
 
 ## `UnRef` 解引函数
