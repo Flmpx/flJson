@@ -6,6 +6,7 @@
 
 #include "../include/flJson.h"
 #include <string.h>
+#include <assert.h>
 
 /* 引入hm_str hm_map hm_arr */
 #include <hm_str.h>
@@ -228,6 +229,8 @@ static flRet flJson_Dump_(hm_str* out, flJson* j, int depth) {
  * @return - 输出异常返回NULL
  */
 char* flJson_Dump(flJson* j) {
+    assert(j != NULL);
+
     hm_str out;
     if (hm_str_init_reserve(&out, 17) != hm_str_ret_suc) {
         return NULL;

@@ -8,6 +8,7 @@
 
 #include "../include/flJson.h"
 #include <string.h>
+#include <assert.h>
 
 /* 引入 hm_map 和 hm_arr */
 #include <hm_map.h>
@@ -140,6 +141,8 @@ flJson* flJsonArray_New() {
  * @return - 如果创建失败, 返回NULL
  */
 flJson* flJsonString_New(const char* s) {
+    assert(s != NULL);
+
     flJson* ret = (flJson*)malloc(sizeof(flJson));
     if (ret == NULL) {
         return NULL;
@@ -166,6 +169,8 @@ flJson* flJsonString_New(const char* s) {
  * @return - 如果类型不匹配, 返回false
  */
 bool flJson_CheckType(flJson* j, flJsonType type) {
+    assert(j != NULL);
+
     return j->type_ & type;
 }
 
@@ -180,6 +185,8 @@ bool flJson_CheckType(flJson* j, flJsonType type) {
  * @return - 如果类型错误返回NULL
  */
 long long* flJsonLL_Get(flJson* jll) {
+    assert(jll != NULL);
+
     if(!flJson_CheckType(jll, flJsonTypeLL)) {
         return NULL;
     }
@@ -195,6 +202,8 @@ long long* flJsonLL_Get(flJson* jll) {
  * @return - 如果类型错误返回NULL
  */
 double* flJsonDouble_Get(flJson* jd) {
+    assert(jd != NULL);
+    
     if(!flJson_CheckType(jd, flJsonTypeDouble)) {
         return NULL;
     }
@@ -210,6 +219,8 @@ double* flJsonDouble_Get(flJson* jd) {
  * @return - 如果类型错误返回NULL
  */
 char* flJsonString_Get(flJson* js) {
+    assert(js != NULL);
+
     if(!flJson_CheckType(js, flJsonTypeString)) {
         return NULL;
     }
@@ -225,6 +236,8 @@ char* flJsonString_Get(flJson* js) {
  * @return - 如果类型错误返回NULL
  */
 bool* flJsonBool_Get(flJson* jb) {
+    assert(jb != NULL);
+
     if(!flJson_CheckType(jb, flJsonTypeBool)) {
         return NULL;
     }
@@ -311,6 +324,8 @@ static inline void hm_map_iter__TO__flObjectIter_(hm_map_iter* mi, flJsonObjectI
  * @return - 如果类型不对, 返回0
  */
 size_t flJsonArray_Size(flJson* ja) {
+    assert(ja != NULL);
+
     if (!flJson_CheckType(ja, flJsonTypeArray)) {
         return 0;
     }
@@ -330,6 +345,9 @@ size_t flJsonArray_Size(flJson* ja) {
  * @warning - 不可以将上级Json插入到下级Json中
  */
 flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
+    assert(ja != NULL);
+    assert(j != NULL);
+
     if (!flJson_CheckType(ja, flJsonTypeArray)) {
         return flRet_Warn;
     }
@@ -360,6 +378,8 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
  * @return - 如果类型不对, 返回flRet_Warn
  */
 flRet flJsonArray_Del(flJson* ja, size_t idx) {
+    assert(ja != NULL);
+
     if (!flJson_CheckType(ja, flJsonTypeArray)) {
         return flRet_Warn;
     }
@@ -387,6 +407,8 @@ flRet flJsonArray_Del(flJson* ja, size_t idx) {
  * @return - 如果类型不对, 返回NULL
  */
 flJson* flJsonArray_Get(flJson* ja, size_t idx) {
+    assert(ja != NULL);
+
     if (!flJson_CheckType(ja, flJsonTypeArray)) {
         return NULL;
     }
@@ -408,6 +430,9 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
  * 初始化数组型Json迭代器
  */
 void flJsonArrayIter_Init(flJsonArrayIter* jai, flJson* ja) {
+    assert(jai != NULL);
+    assert(ja != NULL);
+
     jai->array_ = ja->valArray_.array_;
     jai->size_ = ja->valArray_.size_;
     jai->idx_ = 0;
@@ -418,6 +443,8 @@ void flJsonArrayIter_Init(flJsonArrayIter* jai, flJson* ja) {
  * 数组迭代器当前指向是否有效
  */
 bool flJsonArrayIter_HasCur(flJsonArrayIter* jai) {
+    assert(jai != NULL);
+
     return jai->idx_ < jai->size_;
 } 
 
@@ -430,6 +457,8 @@ bool flJsonArrayIter_HasCur(flJsonArrayIter* jai) {
  * @return - 如果当前指向无效, 返回NULL
  */
 flJson* flJsonArrayIter_Cur(flJsonArrayIter* jai) {
+    assert(jai != NULL);
+
     if (flJsonArrayIter_HasCur(jai)) {
         return jai->array_[jai->idx_];
     } else {
@@ -442,6 +471,8 @@ flJson* flJsonArrayIter_Cur(flJsonArrayIter* jai) {
  * 将数组迭代器指向移动到下一个位置
  */
 void flJsonArrayIter_MoveNext(flJsonArrayIter* jai) {
+    assert(jai != NULL);
+
     if (jai->idx_ < jai->size_) {
         (jai->idx_)++;
     }
@@ -459,6 +490,8 @@ void flJsonArrayIter_MoveNext(flJsonArrayIter* jai) {
  * @return - 如果类型不对, 返回0
  */
 size_t flJsonObject_Size(flJson* jo) {
+    assert(jo != NULL);
+
     if (!flJson_CheckType(jo, flJsonTypeObject)) {
         return 0;
     }
@@ -479,6 +512,10 @@ size_t flJsonObject_Size(flJson* jo) {
  * @warning - 不可以将上级Json插入到下级Json中
  */
 flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
+    assert(jo != NULL);
+    assert(key != NULL);
+    assert(j != NULL);
+
     if (!flJson_CheckType(jo, flJsonTypeObject)) {
         return flRet_Warn;
     }
@@ -529,6 +566,9 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
  * @return - 如果类型不对, 返回flRet_Warn
  */
 flRet flJsonObject_Del(flJson* jo, const char* key) {
+    assert(jo != NULL);
+    assert(key != NULL);
+
     if (!flJson_CheckType(jo, flJsonTypeObject)) {
         return flRet_Warn;
     }
@@ -555,6 +595,9 @@ flRet flJsonObject_Del(flJson* jo, const char* key) {
  * @return - 如果类型不对, 返回NULL
  */
 flJson* flJsonObject_Get(flJson* jo, const char* key) {
+    assert(jo != NULL);
+    assert(key != NULL);
+
     if (!flJson_CheckType(jo, flJsonTypeObject)) {
         return NULL;
     }
@@ -576,6 +619,9 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
  * 初始化对象的迭代器
  */
 void flJsonObjectIter_Init(flJsonObjectIter* joi, flJson* jo) {
+    assert(joi != NULL);
+    assert(jo != NULL);
+
     joi->cap_ = jo->valObject_.cap_;
     joi->entrys_ = jo->valObject_.entrys_;
     joi->idx_ = 0;
@@ -587,6 +633,8 @@ void flJsonObjectIter_Init(flJsonObjectIter* joi, flJson* jo) {
  * 对象迭代器当前指向是否有效
  */
 bool flJsonObjectIter_HasCur(flJsonObjectIter* joi) {
+    assert(joi != NULL);
+
     /* 由于hashTable不支持随机访问, 所有不能简单的判断当前指向是否有效 */
 
     hm_map_iter it;
@@ -607,6 +655,8 @@ bool flJsonObjectIter_HasCur(flJsonObjectIter* joi) {
  * @return - 如果当前指向无效, 返回NULL
  */
 flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi) {
+    assert(joi != NULL);
+
     if (flJsonObjectIter_HasCur(joi)) {
         return ((hm_map_entry*)joi->entrys_)[joi->idx_].val;
     } else {
@@ -620,6 +670,8 @@ flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi) {
  * @return - 如果当前指向无效, 返回NULL
  */
 const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi) {
+    assert(joi != NULL);
+
     if (flJsonObjectIter_HasCur(joi)) {
         return ((hm_map_entry*)joi->entrys_)[joi->idx_].key;
     } else {
@@ -631,6 +683,8 @@ const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi) {
  * 将对象迭代器指向移动到下一个位置
  */
 void flJsonObjectIter_MoveNext(flJsonObjectIter* joi) {
+    assert(joi != NULL);
+
     hm_map_iter iter;
     flObjectIter__TO__hm_map_iter_(joi, &iter);
     /* 直接忽略这里的返回值, 只需要它的移动功能 */

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <assert.h>
 
 /* 引入hm_str */
 #include <hm_str.h>
@@ -732,6 +733,8 @@ static flJson* flJson_Parse_(BufStatus_* status, int depth) {
  * @return - 解析出错返回NULL
  */
 flJson* flJson_Parse(const char* str) {
+    assert(str != NULL);
+
     /* 带解析的字符串初始状态 */
     BufStatus_ start_status = {
         .tail = str + strlen(str),
@@ -757,6 +760,8 @@ flJson* flJson_Parse(const char* str) {
  * @return - 解析出错返回NULL
  */
 flJson* flJson_ParseWithLength(const char* str, size_t len) {
+    assert(str != NULL);
+
     /* 带解析的字符串初始状态 */
     BufStatus_ start_status = {
         .tail = str + len,
