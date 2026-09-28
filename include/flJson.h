@@ -43,7 +43,6 @@ enum flJsonType {
     flJsonTypeArray         = 1L << 6           // 数组
 };
 
-
 enum flRet {
     flRet_Suc,                  // 成功操作, 比如插入成功
     flRet_Error,                // 重大错误, 比如无法分配内存
@@ -61,14 +60,14 @@ struct flJson {
 
         /* Json数组 */
         struct {
-            flJson** array_;        // 存着Json指针的数组
+            /* 只要记录这些的内存地址就行了, hmfocx会自行处理 */
+            flJson** array_;      
             size_t size_;
             size_t cap_;
         } valArray_;
 
         /* Json对象 */
         struct {    
-            /* 只要记录这些的内存地址就行了, hmfocx会自行处理 */
             void* entrys_;
             int* status_;
             size_t size_;
@@ -77,7 +76,6 @@ struct flJson {
     };
     size_t refCount_;         // 引用计数, 当为0时即是释放内存时机
 };
-
 
 struct flJsonObjectIter {
     void* entrys_;
@@ -92,41 +90,39 @@ struct flJsonArrayIter {
     size_t idx_;
 };
 
-/* 不同类型Json的创建 */
-
-extern flJson* flJsonLL_New(long long ll);
-extern flJson* flJsonDouble_New(double d);
-extern flJson* flJsonBool_New(bool b);
-extern flJson* flJsonNull_New();
-extern flJson* flJsonObject_New();
-extern flJson* flJsonArray_New();
-extern flJson* flJsonString_New(const char* s);
 
 
 /* Json类型的判断 */
 
 extern bool flJson_CheckType(flJson* j, flJsonType type);
 
+/* JsonNull类型的操作 */
+
+extern flJson* flJsonNull_New();
 
 /* JsonLL的操作 */
 
+extern flJson* flJsonLL_New(long long ll);
 extern long long* flJsonLL_Get(flJson* jll);
-
 
 /* JsonDouble的操作 */
 
+extern flJson* flJsonDouble_New(double d);
 extern double* flJsonDouble_Get(flJson* jd);
 
 /* JsonBool的操作 */
 
+extern flJson* flJsonBool_New(bool b);
 extern bool* flJsonBool_Get(flJson* jb);
 
 /* JsonString的操作 */
 
+extern flJson* flJsonString_New(const char* s);
 extern char* flJsonString_Get(flJson* js);
 
 /* JsonArray的操作 */
 
+extern flJson* flJsonArray_New();
 extern size_t flJsonArray_Size(flJson* ja);
 extern flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx);
 extern flJson* flJsonArray_Get(flJson* ja, size_t idx);
@@ -139,6 +135,7 @@ extern void flJsonArrayIter_MoveNext(flJsonArrayIter* jai);
 
 /* JsonObject的操作 */
 
+extern flJson* flJsonObject_New();
 extern size_t flJsonObject_Size(flJson* jo);
 extern flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j);
 extern flJson* flJsonObject_Get(flJson* jo, const char* key);
@@ -153,7 +150,6 @@ extern void flJsonObjectIter_MoveNext(flJsonObjectIter* joi);
 /* Unref解引Json */
 
 extern void flJson_UnRef(flJson* j);
-
 
 /* 字符串 --> Json */
 

@@ -57,7 +57,7 @@ static inline bool isTooDeep_(int* depth) {
 }
 
 /* 16进制字符转为10进制, 若字符不合法, 返回-1 */
-static int hexToInt_(char ch) {
+static inline int hexToInt_(char ch) {
     if (ch >= '0' && ch <= '9') return ch - '0';
     if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
     if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
@@ -65,7 +65,7 @@ static int hexToInt_(char ch) {
 }
 
 /* Unicode码点转UTF-8字节序列, 必须保证out字符串开始的时候全为 '\0', 返回写入的字符数 */
-static int codePointToUtf8_(uint32_t cp, char* out) {
+static inline int codePointToUtf8_(uint32_t cp, char* out) {
     if (cp == 0x0000    ||         // flJson拒绝\u0000
         cp > 0x10FFFF   ||          
        (cp >= 0xD800 && cp <= 0xDFFF)) {

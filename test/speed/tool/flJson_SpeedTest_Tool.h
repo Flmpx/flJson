@@ -8,9 +8,9 @@
 
 #include <stdlib.h>
 
-/* 速度测试总次数 */
-extern int FLJSON_SPEEDTEST_CNT;
+/* 解析速度测试总次数 */
+extern int FLJSON_SPEEDTEST_PARSE_CNT;
 
-extern void TEST_JSON_PARSE_SPEED(const char* jsonSrcDir, size_t parseCnt);
+extern void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt);
 
 #endif

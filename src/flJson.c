@@ -15,7 +15,101 @@
 #include <hm_arr.h>
 
 
-/* 不同类型Json的创建 */
+
+/* 对字符串进行hash */
+static inline size_t hashString_(const char* str) {
+    size_t res = 5381;
+    int c;
+    while (c = *str++) {
+        res = ((res << 5) + res) + c;
+    }
+
+    return res;
+}
+
+/* 将Object的内部信息 --> hm_map */
+static inline void flObjectTohm_map_(flJson* jo, hm_map* m) {
+    m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
+    m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
+    m->cmp_key = (hm_cmp)strcmp;
+    m->free_key = (hm_free)free;
+    m->free_val = (hm_free)flJson_UnRef;
+    m->hash_key = (hm_hash)hashString_;
+    m->len = jo->valObject_.cap_;
+    m->size = jo->valObject_.size_;
+}
+
+/* 将hm_map的内部信息 --> Object */
+static inline void hm_mapToflObject_(hm_map* m, flJson* jo) {
+    jo->valObject_.cap_ = m->len;
+    jo->valObject_.size_ = m->size;
+    jo->valObject_.entrys_ = (void*)m->buckets;
+    jo->valObject_.status_ = (int*)m->buckets_status;
+}
+
+/* 将Array的内部信息 --> hm_arr */
+static inline void flArrayTohm_arr_(flJson* ja, hm_arr* a) {
+    a->capacity = ja->valArray_.cap_;
+    a->dynamic_grow = true;
+    a->free_val = (hm_free)flJson_UnRef;
+    a->size = ja->valArray_.size_;
+    a->vals = (void**)ja->valArray_.array_;
+}
+
+/* 将hm_arr的内部信息 --> Array */
+static inline void hm_arrToflArray_(hm_arr* a, flJson* ja) {
+    ja->valArray_.array_ = (flJson**)a->vals;
+    ja->valArray_.cap_ = a->capacity;
+    ja->valArray_.size_ = a->size;
+}
+
+/* 将ObjectIter中的内部信息 --> hm_arr_iter */
+static inline void flObjectIterTohm_map_iter_(flJsonObjectIter* joi, hm_map_iter* mi) {
+    mi->buckets = joi->entrys_;
+    mi->buckets_status = (hm_map_entry_status*)joi->status_;
+    mi->index = joi->idx_;
+    mi->len = joi->cap_;
+}
+
+/* 将hm_arr_iter中的内部信息 --> ObjectIter */
+static inline void hm_map_iterToflObjectIter_(hm_map_iter* mi, flJsonObjectIter* joi) {
+    joi->entrys_ = (void*)mi->buckets;
+    joi->status_ = (int*)mi->buckets_status;
+    joi->idx_ = mi->index;
+    joi->cap_ = mi->len;
+}
+
+
+
+/**
+ * 检测Json的类型
+ * 
+ * @return - 如果类型不匹配, 返回false
+ */
+bool flJson_CheckType(flJson* j, flJsonType type) {
+    assert(j != NULL);
+
+    return j->type_ & type;
+}
+
+
+/**
+ * 创建Null类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonNull_New() {
+    flJson* ret = (flJson*)malloc(sizeof(flJson));
+    if (ret == NULL) {
+        return NULL;
+    }
+    
+    ret->type_ = flJsonTypeNull;
+    ret->refCount_ = 1;
+
+    return ret;
+}
+
 
 /**
  * 创建LL类型的Json
@@ -36,6 +130,22 @@ flJson* flJsonLL_New(long long ll) {
 }
 
 /**
+ * 获取LL型Json的内部数据
+ * 
+ * @return - 如果类型错误返回NULL
+ */
+long long* flJsonLL_Get(flJson* jll) {
+    assert(jll != NULL);
+
+    if(!flJson_CheckType(jll, flJsonTypeLL)) {
+        return NULL;
+    }
+
+    return &(jll->valLL_);
+}
+
+
+/**
  * 创建Double类型的Json
  * 
  * @return - 如果创建失败, 返回NULL
@@ -54,84 +164,20 @@ flJson* flJsonDouble_New(double d) {
 }
 
 /**
- * 创建Bool类型的Json
+ * 获取Double型Json的内部数据
  * 
- * @return - 如果创建失败, 返回NULL
+ * @return - 如果类型错误返回NULL
  */
-flJson* flJsonBool_New(bool b) {
-    flJson* ret = (flJson*)malloc(sizeof(flJson));
-    if (ret == NULL) {
+double* flJsonDouble_Get(flJson* jd) {
+    assert(jd != NULL);
+    
+    if(!flJson_CheckType(jd, flJsonTypeDouble)) {
         return NULL;
     }
-    
-    ret->type_ = flJsonTypeBool;
-    ret->refCount_ = 1;
-    ret->valBool_ = b;
 
-    return ret;
+    return &(jd->valDouble_);
 }
 
-/**
- * 创建Null类型的Json
- * 
- * @return - 如果创建失败, 返回NULL
- */
-flJson* flJsonNull_New() {
-    flJson* ret = (flJson*)malloc(sizeof(flJson));
-    if (ret == NULL) {
-        return NULL;
-    }
-    
-    ret->type_ = flJsonTypeNull;
-    ret->refCount_ = 1;
-
-    return ret;
-}
-
-/**
- * 创建Object类型的Json
- * 
- * @return - 如果创建失败, 返回NULL
- */
-flJson* flJsonObject_New() {
-    flJson* ret = (flJson*)malloc(sizeof(flJson));
-    if (ret == NULL) {
-        return NULL;
-    }
-    
-    ret->type_ = flJsonTypeObject;
-    ret->refCount_ = 1;
-
-    ret->valObject_.cap_ = 0;
-    ret->valObject_.entrys_ = NULL;
-    ret->valObject_.status_ = NULL;
-    ret->valObject_.size_ = 0;
-
-    return ret;
-    
-}
-
-/**
- * 创建Array类型的Json
- * 
- * @return - 如果创建失败, 返回NULL
- */
-flJson* flJsonArray_New() {
-    flJson* ret = (flJson*)malloc(sizeof(flJson));
-    if (ret == NULL) {
-        return NULL;
-    }
-    
-    ret->type_ = flJsonTypeArray;
-    ret->refCount_ = 1;
-
-    ret->valArray_.array_ = NULL;
-    ret->valArray_.cap_ = 0;
-    ret->valArray_.size_ = 0;
-    
-    return ret;
-    
-}
 
 /**
  * 创建String类型的Json
@@ -161,58 +207,6 @@ flJson* flJsonString_New(const char* s) {
     return ret;
 }
 
-/* Json类型的判断 */
-
-/**
- * 检测Json的类型
- * 
- * @return - 如果类型不匹配, 返回false
- */
-bool flJson_CheckType(flJson* j, flJsonType type) {
-    assert(j != NULL);
-
-    return j->type_ & type;
-}
-
-
-
-
-/* JsonLL的操作 */
-
-/**
- * 获取LL型Json的内部数据
- * 
- * @return - 如果类型错误返回NULL
- */
-long long* flJsonLL_Get(flJson* jll) {
-    assert(jll != NULL);
-
-    if(!flJson_CheckType(jll, flJsonTypeLL)) {
-        return NULL;
-    }
-
-    return &(jll->valLL_);
-}
-
-/* JsonDouble的操作 */
-
-/**
- * 获取Double型Json的内部数据
- * 
- * @return - 如果类型错误返回NULL
- */
-double* flJsonDouble_Get(flJson* jd) {
-    assert(jd != NULL);
-    
-    if(!flJson_CheckType(jd, flJsonTypeDouble)) {
-        return NULL;
-    }
-
-    return &(jd->valDouble_);
-}
-
-/* JsonString的操作 */
-
 /**
  * 获取String型Json的内部数据
  * 
@@ -228,7 +222,24 @@ char* flJsonString_Get(flJson* js) {
     return js->valString_;
 }
 
-/* JsonBool的操作 */
+
+/**
+ * 创建Bool类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonBool_New(bool b) {
+    flJson* ret = (flJson*)malloc(sizeof(flJson));
+    if (ret == NULL) {
+        return NULL;
+    }
+    
+    ret->type_ = flJsonTypeBool;
+    ret->refCount_ = 1;
+    ret->valBool_ = b;
+
+    return ret;
+}
 
 /**
  * 获取Bool型Json的内部数据
@@ -247,76 +258,25 @@ bool* flJsonBool_Get(flJson* jb) {
 
 
 /**
- * 用于hm_map <-> flObject, hm_arr <-> flArray, hm_map_iter <-> flObjectIter 之间的内容转化
+ * 创建Array类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
  */
-
-/* 对字符串进行hash */
-static inline size_t hashString_(const char* str) {
-    size_t res = 5381;
-    int c;
-    while (c = *str++) {
-        res = ((res << 5) + res) + c;
+flJson* flJsonArray_New() {
+    flJson* ret = (flJson*)malloc(sizeof(flJson));
+    if (ret == NULL) {
+        return NULL;
     }
-    return res;
+    
+    ret->type_ = flJsonTypeArray;
+    ret->refCount_ = 1;
+
+    ret->valArray_.array_ = NULL;
+    ret->valArray_.cap_ = 0;
+    ret->valArray_.size_ = 0;
+    
+    return ret;
 }
-
-/* 将Object的内部信息 --> hm_map */
-static inline void flObject__TO__hm_map_(flJson* jo, hm_map* m) {
-    m->buckets = (hm_map_entry*)jo->valObject_.entrys_;
-    m->buckets_status = (hm_map_entry_status*)jo->valObject_.status_;
-    m->cmp_key = (hm_cmp)strcmp;
-    m->free_key = (hm_free)free;
-    m->free_val = (hm_free)flJson_UnRef;
-    m->hash_key = (hm_hash)hashString_;
-    m->len = jo->valObject_.cap_;
-    m->size = jo->valObject_.size_;
-}
-
-/* 将hm_map的内部信息 --> Object */
-static inline void hm_map__TO__flObject_(hm_map* m, flJson* jo) {
-    jo->valObject_.cap_ = m->len;
-    jo->valObject_.size_ = m->size;
-    jo->valObject_.entrys_ = (void*)m->buckets;
-    jo->valObject_.status_ = (int*)m->buckets_status;
-}
-
-/* 将Array的内部信息 --> hm_arr */
-static inline void flArray__TO__hm_arr_(flJson* ja, hm_arr* a) {
-    a->capacity = ja->valArray_.cap_;
-    a->dynamic_grow = true;
-    a->free_val = (hm_free)flJson_UnRef;
-    a->size = ja->valArray_.size_;
-    a->vals = (void**)ja->valArray_.array_;
-}
-
-/* 将hm_arr的内部信息 --> Array */
-static inline void hm_arr__TO__flArray_(hm_arr* a, flJson* ja) {
-    ja->valArray_.array_ = (flJson**)a->vals;
-    ja->valArray_.cap_ = a->capacity;
-    ja->valArray_.size_ = a->size;
-}
-
-
-
-/* 将ObjectIter中的内部信息 --> hm_arr_iter */
-static inline void flObjectIter__TO__hm_map_iter_(flJsonObjectIter* joi, hm_map_iter* mi) {
-    mi->buckets = joi->entrys_;
-    mi->buckets_status = (hm_map_entry_status*)joi->status_;
-    mi->index = joi->idx_;
-    mi->len = joi->cap_;
-}
-
-/* 将hm_arr_iter中的内部信息 --> ObjectIter */
-static inline void hm_map_iter__TO__flObjectIter_(hm_map_iter* mi, flJsonObjectIter* joi) {
-    joi->entrys_ = (void*)mi->buckets;
-    joi->status_ = (int*)mi->buckets_status;
-    joi->idx_ = mi->index;
-    joi->cap_ = mi->len;
-}
-
-
-
-/* JsonArray的操作 */
 
 /**
  * 获取Array类型Json的大小
@@ -357,7 +317,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
     idx = idx > s ? s : idx;
 
     hm_arr arr;
-    flArray__TO__hm_arr_(ja, &arr);       // 转化
+    flArrayTohm_arr_(ja, &arr);       // 转化
 
     hm_arr_ret retCode = hm_arr_insert_index(&arr, j, idx);
 
@@ -365,7 +325,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
         return flRet_Error;
     } else {
         j->refCount_++;
-        hm_arr__TO__flArray_(&arr, ja);    // 转化
+        hm_arrToflArray_(&arr, ja);    // 转化
         return flRet_Suc;
     }
 }
@@ -389,11 +349,11 @@ flRet flJsonArray_Del(flJson* ja, size_t idx) {
     }
 
     hm_arr arr;
-    flArray__TO__hm_arr_(ja, &arr);
+    flArrayTohm_arr_(ja, &arr);
 
     hm_arr_del_index(&arr, idx);
 
-    hm_arr__TO__flArray_(&arr, ja);
+    hm_arrToflArray_(&arr, ja);
 
     return flRet_Suc;
 }
@@ -414,7 +374,7 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
     }
 
     hm_arr arr;
-    flArray__TO__hm_arr_(ja, &arr);
+    flArrayTohm_arr_(ja, &arr);
 
     flJson* ret = hm_arr_get(&arr, idx);
 
@@ -424,7 +384,6 @@ flJson* flJsonArray_Get(flJson* ja, size_t idx) {
         return ret;
     }
 }
-
 
 /**
  * 初始化数组型Json迭代器
@@ -438,7 +397,6 @@ void flJsonArrayIter_Init(flJsonArrayIter* jai, flJson* ja) {
     jai->idx_ = 0;
 }
 
-
 /**
  * 数组迭代器当前指向是否有效
  */
@@ -447,7 +405,6 @@ bool flJsonArrayIter_HasCur(flJsonArrayIter* jai) {
 
     return jai->idx_ < jai->size_;
 } 
-
 
 /**
  * 获取当前数组迭代器所指向的Json
@@ -466,7 +423,6 @@ flJson* flJsonArrayIter_Cur(flJsonArrayIter* jai) {
     }
 }
 
-
 /**
  * 将数组迭代器指向移动到下一个位置
  */
@@ -479,10 +435,27 @@ void flJsonArrayIter_MoveNext(flJsonArrayIter* jai) {
 }
 
 
+/**
+ * 创建Object类型的Json
+ * 
+ * @return - 如果创建失败, 返回NULL
+ */
+flJson* flJsonObject_New() {
+    flJson* ret = (flJson*)malloc(sizeof(flJson));
+    if (ret == NULL) {
+        return NULL;
+    }
+    
+    ret->type_ = flJsonTypeObject;
+    ret->refCount_ = 1;
 
+    ret->valObject_.cap_ = 0;
+    ret->valObject_.entrys_ = NULL;
+    ret->valObject_.status_ = NULL;
+    ret->valObject_.size_ = 0;
 
-/* JsonObject的操作 */
-
+    return ret;
+}
 
 /**
  * 获取Object类型Json的大小
@@ -526,7 +499,7 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
     }
 
     hm_map map;
-    flObject__TO__hm_map_(jo, &map);
+    flObjectTohm_map_(jo, &map);
 
     hm_map_ret retCode = hm_map_insert(&map, new_s, j);
 
@@ -546,16 +519,13 @@ flRet flJsonObject_Add(flJson* jo, const char* key, flJson* j) {
 
             j->refCount_++;
         }
-
-
     } else {
         /* 正常插入 */
         j->refCount_++;
     }
-    hm_map__TO__flObject_(&map, jo);
+    hm_mapToflObject_(&map, jo);
     
     return flRet_Suc;
-
 }
 
 /**
@@ -574,7 +544,7 @@ flRet flJsonObject_Del(flJson* jo, const char* key) {
     }
 
     hm_map map;
-    flObject__TO__hm_map_(jo, &map);
+    flObjectTohm_map_(jo, &map);
 
     hm_map_ret retCode = hm_map_del(&map, (void*)key);
     
@@ -583,7 +553,6 @@ flRet flJsonObject_Del(flJson* jo, const char* key) {
     } else {
         return flRet_Suc;
     }
-
 }
 
 /**
@@ -603,7 +572,7 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
     }
 
     hm_map map;
-    flObject__TO__hm_map_(jo, &map);
+    flObjectTohm_map_(jo, &map);
 
     flJson* ret = hm_map_get(&map, (void*)key).val;
 
@@ -613,7 +582,6 @@ flJson* flJsonObject_Get(flJson* jo, const char* key) {
         return ret;
     }
 }
-
 
 /**
  * 初始化对象的迭代器
@@ -628,7 +596,6 @@ void flJsonObjectIter_Init(flJsonObjectIter* joi, flJson* jo) {
     joi->status_ = jo->valObject_.status_;
 }
 
-
 /**
  * 对象迭代器当前指向是否有效
  */
@@ -638,14 +605,13 @@ bool flJsonObjectIter_HasCur(flJsonObjectIter* joi) {
     /* 由于hashTable不支持随机访问, 所有不能简单的判断当前指向是否有效 */
 
     hm_map_iter it;
-    flObjectIter__TO__hm_map_iter_(joi, &it);
+    flObjectIterTohm_map_iter_(joi, &it);
     /* has_next函数会自动往后面移动迭代器指向, 如果连后面(包括当前指向)都没有有效值, 那直接返回false */
     bool ret = hm_map_iter_has_next(&it);
-    hm_map_iter__TO__flObjectIter_(&it, joi);
+    hm_map_iterToflObjectIter_(&it, joi);
 
     return ret;
 }
-
 
 /**
  * 获取当前对象迭代器所指向条目的Json
@@ -686,43 +652,33 @@ void flJsonObjectIter_MoveNext(flJsonObjectIter* joi) {
     assert(joi != NULL);
 
     hm_map_iter iter;
-    flObjectIter__TO__hm_map_iter_(joi, &iter);
+    flObjectIterTohm_map_iter_(joi, &iter);
     /* 直接忽略这里的返回值, 只需要它的移动功能 */
     hm_map_iter_next(&iter);
-    hm_map_iter__TO__flObjectIter_(&iter, joi);
+    hm_map_iterToflObjectIter_(&iter, joi);
 }
-
-
-
-
-/* Unref解引Json */
 
 /* 释放掉Json中的Array, 等于直接调用hm_arr_free函数 */
 static void flArray_Free_(flJson* ja) {
-
     hm_arr arr;
-    flArray__TO__hm_arr_(ja, &arr);
+    flArrayTohm_arr_(ja, &arr);
 
     hm_arr_free(&arr);
-
 }
 
 /* 释放掉Json中的Object, 等于直接调用hm_map_free函数 */
 static void flObject_Free_(flJson* jo) {
-
     hm_map map;
-    flObject__TO__hm_map_(jo, &map);
+    flObjectTohm_map_(jo, &map);
 
     hm_map_free(&map);
-    
 }
 
 /**
  * 对Json进行解引用
  */
 void flJson_UnRef(flJson* j) {
-    if (j == NULL) return;
-    if (j->refCount_ == 0) return;
+    if (j == NULL || j->refCount_ == 0) return;
 
     j->refCount_--;
 
@@ -734,7 +690,5 @@ void flJson_UnRef(flJson* j) {
             case flJsonTypeArray:  flArray_Free_(j);                 break;
         }
         free(j);
-    }
-
-    
+    }   
 }

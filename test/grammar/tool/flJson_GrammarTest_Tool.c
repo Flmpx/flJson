@@ -9,7 +9,7 @@
 #include "flJson_GrammarTest_Tool.h"
 
 int FLJSON_GRAMMARTEST_FAIL_CNT = 0;
-int FLJSON_GRAMMARTEST_SUC_CNT = 0;
+int FLJSON_GRAMMARTEST_SUC_CNT  = 0;
 
 /* 颜色 */
 #define COLOR_RESET   "\033[0m"
@@ -32,18 +32,18 @@ static const char* GET_TAG_STR(FL_TAG tag) {
 }
 
 /* 文件打开失败 */
-static void PRINT_OPENFILE_FAIL(const char* jsonSrcDir) {
-    printf(COLOR_YELLOW "Can't open %s" COLOR_RESET "\n", jsonSrcDir);
+static void PRINT_OPENFILE_FAIL(const char* json_dir) {
+    printf(COLOR_YELLOW "Can't open %s" COLOR_RESET "\n", json_dir);
 }
 
 /* 复制文内容到字符串失败 */
-static void PRINT_MALLOC_FAIL(const char* jsonSrcDir) {
-    printf(COLOR_YELLOW "Malloc failed when copy %s" COLOR_RESET "\n", jsonSrcDir);
+static void PRINT_MALLOC_FAIL(const char* json_dir) {
+    printf(COLOR_YELLOW "Malloc failed when copy %s" COLOR_RESET "\n", json_dir);
 }
 
 
 /* 打印结果信息 */
-static void PRINT_CHECK_JSON_RESULT(FL_TAG expect, FL_TAG real, const char* jsonSrcDir) {
+static void PRINT_CHECK_RESULT(FL_TAG expect, FL_TAG real, const char* json_dir) {
     printf("|EXPECT:%s |REAL:%s|", GET_TAG_STR(expect), GET_TAG_STR(real));
     printf(" --- ");
     if (expect & real) {
@@ -53,43 +53,43 @@ static void PRINT_CHECK_JSON_RESULT(FL_TAG expect, FL_TAG real, const char* json
         printf(COLOR_RED);
         FLJSON_GRAMMARTEST_FAIL_CNT++;
     }
-    printf("%s\n", jsonSrcDir);
+    printf("%s\n", json_dir);
     printf(COLOR_RESET);
 }
 
-/* 对json进行测试, 路径必须是基于test/grammar目录下的 */
-void TEST_CHECK_JSON_CORRECTNESS(FL_TAG expect, const char* jsonSrcDir) {
+/* 对json进行语法测试, json文件路径必须是基于test/grammar目录下的 */
+void FLJSON_GRAMMARTEST(FL_TAG expect, const char* json_dir) {
 
     /* 由于路径问题, 所有需要修改文件路径 */
-    size_t headDirSize = strlen(SOURCE_HEAD_PATH);       // FLJSON_SOURCE_HEAD_PATH 是当前整个项目的test/文件夹的绝对路径
-    size_t tailDirSize = strlen(jsonSrcDir);
-    char realJsonSrcDir[headDirSize + tailDirSize + 1];
-    sprintf(realJsonSrcDir,  SOURCE_HEAD_PATH "%s", jsonSrcDir);
+    size_t head_dir_len = strlen(SOURCE_HEAD_PATH);       // SOURCE_HEAD_PATH 是当前整个项目的test/grammar/文件夹的绝对路径
+    size_t json_dir_len = strlen(json_dir);
+    char real_dir[head_dir_len + json_dir_len + 1];
+    sprintf(real_dir,  SOURCE_HEAD_PATH "%s", json_dir);
     
     /* 打开文件 */
-    FILE* jsonFile = fopen(realJsonSrcDir, "rb");
-    if (jsonFile == NULL) {
-        PRINT_OPENFILE_FAIL(realJsonSrcDir);
+    FILE* json_file = fopen(real_dir, "rb");
+    if (json_file == NULL) {
+        PRINT_OPENFILE_FAIL(real_dir);
         return;
     }
 
     /* 复制内容到字符串中 */
-    fseek(jsonFile, 0, SEEK_END);
-    long jsonFileSize = ftell(jsonFile);
-    fseek(jsonFile, 0, SEEK_SET);
-    char* jsonStr = malloc(jsonFileSize + 1);
-    if (jsonStr == NULL) {
-        PRINT_MALLOC_FAIL(jsonSrcDir);
+    fseek(json_file, 0, SEEK_END);
+    long json_file_len = ftell(json_file);
+    fseek(json_file, 0, SEEK_SET);
+    char* json_str = malloc(json_file_len + 1);
+    if (json_str == NULL) {
+        PRINT_MALLOC_FAIL(json_dir);
     }
-    fread(jsonStr, 1, jsonFileSize, jsonFile);
-    jsonStr[jsonFileSize] = '\0';
+    fread(json_str, 1, json_file_len, json_file);
+    json_str[json_file_len] = '\0';
     
     /* 解析json字符串 */
-    flJson* root = flJson_ParseWithLength(jsonStr, jsonFileSize);
-    PRINT_CHECK_JSON_RESULT(expect, root == NULL ? FL_NO : FL_YES, jsonSrcDir);
+    flJson* root = flJson_ParseWithLength(json_str, json_file_len);
+    PRINT_CHECK_RESULT(expect, root == NULL ? FL_NO : FL_YES, json_dir);
     
     /* 清理资源 */
-    fclose(jsonFile);
+    fclose(json_file);
     flJson_UnRef(root);
-    free(jsonStr);
+    free(json_str);
 }

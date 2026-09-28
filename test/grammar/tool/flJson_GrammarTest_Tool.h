@@ -19,6 +19,6 @@ typedef enum FL_TAG {
     FL_NO           = 1L << 1               // 必须是错的
 } FL_TAG;
 
-extern void TEST_CHECK_JSON_CORRECTNESS(FL_TAG expect, const char* jsonSrcDir);
+extern void FLJSON_GRAMMARTEST(FL_TAG expect, const char* json_dir);
 
 #endif
