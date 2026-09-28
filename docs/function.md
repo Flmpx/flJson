@@ -3,11 +3,16 @@
 
 ## 不同类型的Json的相关函数
 
-Json类型内部具备引用计数, 当调用New函数获取一个新的Json节点时(解析字符串相当于获取一个新的Json节点)或者将一个Json节点插入到其他容器(数组或者对象)中时会增加引用计数, 其他返回flJson*的函数不会增加引用计数, **故每一个New函数都该有一个对应的UnRef函数**  
-  
-Json中包含字符串类型的(String类型Json, Object中的key)均不支持\0(\u0000)存入, 即不支持存入字符串长度  
+>  [!Tip]
+>  - Json类型内部具备引用计数, 当调用New函数获取一个新的Json节点时(解析字符串相当于获取一个新的Json节点)或者将一个Json节点插入到其他容器(数组或者对象)中时会增加引用计数, 其他返回flJson*的函数不会增加引用计数, **故每一个New函数都该有一个对应的UnRef函数**  
+>  - Json中包含字符串类型的(String类型Json, Object中的key)均不支持\0(\u0000)存入, 即不支持存入字符串长度  
+>  - 下面的函数在Debug模式的构建下, 如果传入空指针, 会断言
+>  
 
-下面的函数在Debug模式的构建下, 如果传入空指针, 会断言
+<br>
+<br>
+<br>
+<br>
 
 ### `NULL` 类型的Json
 
@@ -21,7 +26,12 @@ Json中包含字符串类型的(String类型Json, Object中的key)均不支持\0
  */
 flJson* flJsonNull_New();
 ```
-  
+
+<br>
+<br>
+<br>
+<br>
+
   
 ### `Long Long` 类型的Json
 
@@ -50,7 +60,10 @@ flJson* flJsonLL_New(long long ll);
 long long* flJsonLL_Get(flJson* jll);
 ```
 
-
+<br>
+<br>
+<br>
+<br>
 
 ### `Double` 类型的Json
 
@@ -79,6 +92,11 @@ flJson* flJsonDouble_New(double d);
 double* flJsonDouble_Get(flJson* jd);
 ```
 
+<br>
+<br>
+<br>
+<br>
+
 ### `Bool` 类型的Json
 
 > **创建**
@@ -104,6 +122,11 @@ flJson* flJsonBool_New(bool b);
  */
 bool* flJsonBool_Get(flJson* jb);
 ```
+
+<br>
+<br>
+<br>
+<br>
 
 
 ### `String` 类型的Json
@@ -133,6 +156,12 @@ flJson* flJsonString_New(const char* s);
  */
 char* flJsonString_Get(flJson* js);
 ```
+
+<br>
+<br>
+<br>
+<br>
+
 
 ### `Array` 类型的Json
 
@@ -236,6 +265,11 @@ void flJsonArrayIter_MoveNext(flJsonArrayIter* jai);
 
 以上的函数最好一起通过一个循环使用, 而不是分开使用  
 
+
+<br>
+<br>
+<br>
+<br>
 
 
 ### `Object` 类型的Json
@@ -350,6 +384,12 @@ void flJsonObjectIter_MoveNext(flJsonObjectIter* joi);
 以上的函数最好一起通过一个循环使用, 而不是分开使用  
 
 
+<br>
+<br>
+<br>
+<br>
+
+
 
 ### 总结
 
@@ -357,6 +397,14 @@ void flJsonObjectIter_MoveNext(flJsonObjectIter* joi);
 >  `New` 用于创建Json节点 
 >  `Get` 用于获取内部数据, 同时由于返回的是指针类型, 可以对数据进行修改, 如果修改, 引用它的所有容器得到的数据都是修改之后的
 >  每次创建或者获得一个**新**的Json节点时, 引用计数++
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
 
 ## `UnRef` 解引函数
 
@@ -369,6 +417,12 @@ void flJson_UnRef(flJson* j);
 
 对该Json的内部引用计数减少一次, 如果引用次数变为0, 自动进行释放
 
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ## 字符串 --> Json树
 
@@ -402,6 +456,14 @@ flJson* flJson_ParseWithLength(const char* str, size_t len);
 ```
 
 指定需要解析的Json文本长度  
+
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 
 ## Json树 --> 字符串
