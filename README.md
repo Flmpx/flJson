@@ -149,7 +149,7 @@ mkdir build
 cd build
 
 # CMake构建
-cmake ..
+cmake ..        # 如果要使用ssh进行拉取flJson所依赖的库, 开启选项 FLJONS_USE_SSH_FOR_GIT
 
 # 执行Makefile文件
 make

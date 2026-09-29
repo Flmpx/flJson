@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.28.3)
 
 project(flJson)
 
+option(FLJONS_USE_SSH_FOR_GIT OFF)
+
+if (FLJONS_USE_SSH_FOR_GIT)
+    set(FLJSON_DEPEND_LINK "git@github.com:Flmpx/hmfocx.git")
+else()
+    set(FLJSON_DEPEND_LINK "https://github.com/Flmpx/hmfocx.git")
+endif()
 
 # 拉取hmfocx库
 include(FetchContent)
@@ -11,7 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FetchContent_Declare(
     hmfocx
-    GIT_REPOSITORY https://github.com/Flmpx/hmfocx.git
+    GIT_REPOSITORY ${FLJSON_DEPEND_LINK}
     GIT_TAG v0.13.0
 )
 
