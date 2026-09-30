@@ -97,7 +97,7 @@ struct flJson {
 
         /* 存数组 */
         struct {
-            flJson** array_;            // 存着Json指针的数组
+            void** array_;              // 存着Json指针的数组
             size_t size_;               // 元素数目
             size_t cap_;                // 容量
         } valArray_;

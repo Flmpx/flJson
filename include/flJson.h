@@ -19,21 +19,7 @@
 
 
 /* Json的类型(总共七种) */
-typedef enum flJsonType flJsonType;
-
-/* Json本体 */
-typedef struct flJson flJson;
-
-/* 全局函数返回状态码 */
-typedef enum flRet flRet;
-
-/* 对象迭代器 */
-typedef struct flJsonObjectIter flJsonObjectIter;
-
-/* 数组迭代器 */
-typedef struct flJsonArrayIter flJsonArrayIter;
-
-enum flJsonType {
+typedef enum flJsonType {
     flJsonTypeLL            = 1L << 0,          // 整型
     flJsonTypeDouble        = 1L << 1,          // 浮点型
     flJsonTypeString        = 1L << 2,          // 字符串型
@@ -41,16 +27,18 @@ enum flJsonType {
     flJsonTypeBool          = 1L << 4,          // 布尔型
     flJsonTypeObject        = 1L << 5,          // 对象
     flJsonTypeArray         = 1L << 6           // 数组
-};
+} flJsonType;
 
-enum flRet {
+/* 全局函数返回状态码 */
+typedef enum flRet {
     flRet_Suc,                  // 成功操作, 比如插入成功
     flRet_Error,                // 重大错误, 比如无法分配内存
     flRet_Warn,                 // 警告, 比如类型错误
     flRet_None,                 // 操作无效, 比如删除不存在的键
-};
+} flRet;
 
-struct flJson {
+/* Json本体 */
+typedef struct flJson {
     flJsonType type_;        // json的类型标志
     union {
         long long valLL_;  
@@ -61,7 +49,7 @@ struct flJson {
         /* Json数组 */
         struct {
             /* 只要记录这些的内存地址就行了, hmfocx会自行处理 */
-            flJson** array_;      
+            void** array_;      
             size_t size_;
             size_t cap_;
         } valArray_;
@@ -75,20 +63,22 @@ struct flJson {
         } valObject_;
     };
     size_t refCount_;         // 引用计数, 当为0时即是释放内存时机
-};
+} flJson;
 
-struct flJsonObjectIter {
+/* 对象迭代器 */
+typedef struct flJsonObjectIter {
     void* entrys_;
     int* status_;
     size_t cap_;
     size_t idx_;
-};
+} flJsonObjectIter;
 
-struct flJsonArrayIter {
-    flJson** array_;
+/* 数组迭代器 */
+typedef struct flJsonArrayIter {
+    void** array_;
     size_t size_;
     size_t idx_;
-};
+} flJsonArrayIter;
 
 
 

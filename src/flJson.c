@@ -58,7 +58,7 @@ static inline void flArrayTohm_arr_(flJson* ja, hm_arr* a) {
 
 /* 将hm_arr的内部信息 --> Array */
 static inline void hm_arrToflArray_(hm_arr* a, flJson* ja) {
-    ja->valArray_.array_ = (flJson**)a->vals;
+    ja->valArray_.array_ = a->vals;
     ja->valArray_.cap_ = a->capacity;
     ja->valArray_.size_ = a->size;
 }
