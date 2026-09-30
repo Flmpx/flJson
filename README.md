@@ -3,17 +3,17 @@
 
 
 ## 快速开始
-将 `include/` 和 `src/` 目录下的文件按照原组织方式复制到你的项目中  
+由于此项目具备依赖, 所以先[通过CMake来获取](#构建)后才能使用该库  
   
-复制如下代码  
+配置好CMake之后复制如下代码到一个C/C++文件中  
 
 ```c
 #if defined(__cplusplus) 
     extern "C" {
-        #include "include/flJson.h"
+        #include <flJson.h>
     }
 #else 
-    #include "include/flJson.h"
+    #include <flJson.h>
 #endif
 
 int main()
@@ -136,7 +136,7 @@ FetchContent_MakeAvailable(flJson)
 
 # ...
 
-target_link_library(your_executable PRIVATE flJson)
+target_link_libraries(your_executable PRIVATE flJson)
 ```
 
 然后就是最常见的CMake构建流程了  
