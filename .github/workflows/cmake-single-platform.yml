@@ -17,7 +17,7 @@ jobs:
         submodules: recursive
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON -DGRAMMAR_TEST=ON    # 使用BUILD_TEST=ON开启测试, 并使用GRAMMAR_TEST开启语法测试
+      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DFLJSON_BUILD_TEST=ON -DFLJSON_GRAMMAR_TEST=ON    # 使用BUILD_TEST=ON开启测试, 并使用GRAMMAR_TEST开启语法测试
 
     - name: Build       
       run: cmake --build ${{github.workspace}}/bin --target flJson_GrammarTest_Exe --config Debug
@@ -37,7 +37,7 @@ jobs:
         submodules: recursive
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DBUILD_TEST=ON -DSPEED_TEST=ON    # 使用BUILD_TEST=ON开启测试, 并使用SPEED_TEST开启速度测试
+      run: cmake -B ${{github.workspace}}/bin -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DFLJSON_BUILD_TEST=ON -DFLJSON_SPEED_TEST=ON    # 使用BUILD_TEST=ON开启测试, 并使用SPEED_TEST开启速度测试
 
     - name: Build       
       run: cmake --build ${{github.workspace}}/bin --target flJson_SpeedTest_Exe --config Release

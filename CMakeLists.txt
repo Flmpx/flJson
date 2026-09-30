@@ -25,11 +25,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(hmfocx)
 
 # 所有的c文件在src目录中
-file(GLOB FL_SRC_SOURCE_LIST ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
+file(GLOB FLJSON_SRC_SOURCE_LIST ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
-add_library(flJson STATIC ${FL_SRC_SOURCE_LIST})
+add_library(flJson STATIC ${FLJSON_SRC_SOURCE_LIST})
 
 # 只在c文件中使用hmfocx的东西
 target_link_libraries(flJson PRIVATE hmfocx)
@@ -37,19 +37,21 @@ target_link_libraries(flJson PRIVATE hmfocx)
 target_include_directories(flJson PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
-option(BUILD_TEST "Run flJson Test" OFF)        #总开关
-option(GRAMMAR_TEST "Run GrammarTest" OFF)   
-option(SPEED_TEST "Run SpeedTest" OFF)
+option(FLJSON_BUILD_TEST "Run flJson Test" OFF)        #总开关
+option(FLJSON_GRAMMAR_TEST "Run GrammarTest" OFF)   
+option(FLJSON_SPEED_TEST "Run SpeedTest" OFF)
 
 
-if (BUILD_TEST)         # 开启测试
+if (FLJSON_BUILD_TEST)         # 开启测试
     enable_testing()
 
-    if (GRAMMAR_TEST)       # 语法测试
+    if (FLJSON_GRAMMAR_TEST)       # 语法测试
+        message("FLJSON_GRAMMAR_TEST = ${FLJSON_GRAMMAR_TEST}")
         add_subdirectory(test/grammar)
     endif()
 
-    if (SPEED_TEST)         # 速度测试
+    if (FLJSON_SPEED_TEST)         # 速度测试
+        message("FLJSON_SPEED_TEST = ${FLJSON_SPEED_TEST}")
         add_subdirectory(test/speed)
     endif()
 

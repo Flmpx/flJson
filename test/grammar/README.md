@@ -52,7 +52,7 @@ int main()
 ```shell
 mkdir build
 cd build
-cmake -DBUILD_TEST=ON -DGRAMMAR_TEST=ON ..        # BUILD_TEST选项由于开启测试, GRAMMAR_TEST用于开启语法测试
+cmake -DFLJSON_BUILD_TEST=ON -DFLJSON_GRAMMAR_TEST=ON ..        # BUILD_TEST选项由于开启测试, GRAMMAR_TEST用于开启语法测试
 make
 ctest -V
 ```

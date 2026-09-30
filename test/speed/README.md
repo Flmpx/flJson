@@ -53,7 +53,7 @@ int main()
 ```shell
 mkdir build
 cd build
-cmake -DBUILD_TEST=ON -DSPEED_TEST=ON ..        # BUILD_TEST选项由于开启测试, SPEED_TEST用于开启速度测试
+cmake -DFLJSON_BUILD_TEST=ON -DFLJSON_SPEED_TEST=ON ..        # BUILD_TEST选项由于开启测试, SPEED_TEST用于开启速度测试
 make
 ctest -V
 ```
