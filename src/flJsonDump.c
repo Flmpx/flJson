@@ -92,7 +92,7 @@ static flRet flJsonLL_Dump_(hm_str* out, flJson* jll) {
 /* 将浮点型json输出到out中 */
 static flRet flJsonDouble_Dump_(hm_str* out, flJson* jd) {
     char buf[BUF_SIZE_];
-    sprintf(buf, "%g", jd->valDouble_);
+    sprintf(buf, "%lf", jd->valDouble_);
 
     if (hm_str_append(out, buf) != hm_str_ret_suc) {
         return flRet_Error;
