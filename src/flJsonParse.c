@@ -222,7 +222,7 @@ static char* parseStr_(BufStatus_* status) {
         }
 
         /* 拼接字符串 */
-        if (hm_str_append(&str, tmp) != hm_str_ret_suc) {
+        if (hm_str_append(&str, tmp, strlen(tmp)) != hm_str_ret_suc) {
             hm_str_free(&str);
             return NULL;
         }

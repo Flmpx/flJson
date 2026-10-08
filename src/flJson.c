@@ -319,7 +319,7 @@ flRet flJsonArray_Add(flJson* ja, flJson* j, size_t idx) {
     hm_arr arr;
     flArrayTohm_arr_(ja, &arr);       // 转化
 
-    hm_arr_ret retCode = hm_arr_insert_index(&arr, j, idx);
+    hm_arr_ret retCode = hm_arr_insert(&arr, j, idx);
 
     if (retCode != hm_arr_ret_suc) {
         return flRet_Error;
@@ -351,7 +351,7 @@ flRet flJsonArray_Del(flJson* ja, size_t idx) {
     hm_arr arr;
     flArrayTohm_arr_(ja, &arr);
 
-    hm_arr_del_index(&arr, idx);
+    hm_arr_del(&arr, idx);
 
     hm_arrToflArray_(&arr, ja);
 
@@ -606,8 +606,7 @@ bool flJsonObjectIter_HasCur(flJsonObjectIter* joi) {
 
     hm_map_iter it;
     flObjectIterTohm_map_iter_(joi, &it);
-    /* has_next函数会自动往后面移动迭代器指向, 如果连后面(包括当前指向)都没有有效值, 那直接返回false */
-    bool ret = hm_map_iter_has_next(&it);
+    bool ret = hm_map_iter_has_cur(&it);
     hm_map_iterToflObjectIter_(&it, joi);
 
     return ret;
@@ -623,11 +622,12 @@ bool flJsonObjectIter_HasCur(flJsonObjectIter* joi) {
 flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi) {
     assert(joi != NULL);
 
-    if (flJsonObjectIter_HasCur(joi)) {
-        return ((hm_map_entry*)joi->entrys_)[joi->idx_].val;
-    } else {
-        return NULL;
-    }
+    hm_map_iter it;
+    flObjectIterTohm_map_iter_(joi, &it);
+    flJson* ret = hm_map_iter_cur(&it).val;
+    hm_map_iterToflObjectIter_(&it, joi);
+
+    return ret;
 }
 
 /**
@@ -638,11 +638,12 @@ flJson* flJsonObjectIter_CurVal(flJsonObjectIter* joi) {
 const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi) {
     assert(joi != NULL);
 
-    if (flJsonObjectIter_HasCur(joi)) {
-        return ((hm_map_entry*)joi->entrys_)[joi->idx_].key;
-    } else {
-        return NULL;
-    }
+    hm_map_iter it;
+    flObjectIterTohm_map_iter_(joi, &it);
+    const char* ret = hm_map_iter_cur(&it).key;
+    hm_map_iterToflObjectIter_(&it, joi);
+
+    return ret;
 }
 
 /**
@@ -651,15 +652,14 @@ const char* flJsonObjectIter_CurKey(flJsonObjectIter* joi) {
 void flJsonObjectIter_MoveNext(flJsonObjectIter* joi) {
     assert(joi != NULL);
 
-    hm_map_iter iter;
-    flObjectIterTohm_map_iter_(joi, &iter);
-    /* 直接忽略这里的返回值, 只需要它的移动功能 */
-    hm_map_iter_next(&iter);
-    hm_map_iterToflObjectIter_(&iter, joi);
+    hm_map_iter it;
+    flObjectIterTohm_map_iter_(joi, &it);
+    hm_map_iter_move_next(&it);
+    hm_map_iterToflObjectIter_(&it, joi);
 }
 
 /* 释放掉Json中的Array, 等于直接调用hm_arr_free函数 */
-static void flArray_Free_(flJson* ja) {
+static inline void flArray_Free_(flJson* ja) {
     hm_arr arr;
     flArrayTohm_arr_(ja, &arr);
 
@@ -667,7 +667,7 @@ static void flArray_Free_(flJson* ja) {
 }
 
 /* 释放掉Json中的Object, 等于直接调用hm_map_free函数 */
-static void flObject_Free_(flJson* jo) {
+static inline void flObject_Free_(flJson* jo) {
     hm_map map;
     flObjectTohm_map_(jo, &map);
 

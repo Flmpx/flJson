@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FetchContent_Declare(
     hmfocx
     GIT_REPOSITORY ${FLJSON_DEPEND_LINK}
-    GIT_TAG v0.13.0
+    GIT_TAG v0.16.0
 )
 
 FetchContent_MakeAvailable(hmfocx)
