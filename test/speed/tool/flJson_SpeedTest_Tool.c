@@ -13,6 +13,7 @@
 #include <string.h>
 
 int FLJSON_SPEEDTEST_PARSE_CNT = 0;
+int FLJSON_SPEEDTEST_DUMP_CNT  = 0;
 
 /* 颜色 */
 #define COLOR_RESET   "\033[0m"
@@ -38,24 +39,21 @@ static double GET_TIME_IN_MS() {
 }
 
 /* 打印速度的结果信息 */
-static void PRINT_SPEED_RESULT(double timeDiff, size_t fileSize, size_t runCount, const char* json_dir) {
+static void PRINT_SPEED_RESULT(double timeDiff, size_t fileSize, size_t runCount, const char* json_dir, const char* mode) {
     printf( COLOR_GREEN "%s" COLOR_RESET "\n", json_dir);
     
     double size = (double)fileSize / 1024.0 / 1024.0;
     double time = timeDiff / 1e3;
 
+    printf("| Category : %s     \n", mode);
     printf("| Size     : %gMB   \n", size);
     printf("| Oper Cnt : %zu    \n", runCount);
     printf("| Cost Time: %gs    \n", time);
     printf("| Speed    : %gMB/S \n", size * runCount / time);
     printf("\n");
-
-    FLJSON_SPEEDTEST_PARSE_CNT++;
 }
 
-/* 测试解析速度, 路径必须是基于test/speed目录下的, parse_cnt是需要解析的次数 */
-void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt) {
-
+static char* COPY_FILE_TO_FILE(const char* json_dir) {
     /* 由于路径问题, 所有需要修改文件路径 */
     size_t head_dir_len = strlen(SOURCE_HEAD_PATH);       // SOURCE_HEAD_PATH 是当前整个项目的test/speed文件夹的绝对路径
     size_t json_dir_len = strlen(json_dir);
@@ -66,7 +64,7 @@ void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt) {
     FILE* json_file = fopen(real_dir, "rb");
     if (json_file == NULL) {
         PRINT_OPENFILE_FAIL(real_dir);
-        return;
+        return NULL;
     }
 
     /* 复制内容到字符串中 */
@@ -80,21 +78,60 @@ void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt) {
     fread(json_str, 1, json_file_len, json_file);
     json_str[json_file_len] = '\0';
 
+    fclose(json_file);
+
+    return json_str;
+}
+
+/* 测试解析速度, 路径必须是基于test/speed目录下的, parse_cnt是需要解析的次数 */
+void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt) {
+
     /* 解析json字符串 */
     flJson* roots[parse_cnt];     // 为了只测试解析速度而不加入释放所占据的时间
+    char* json_str = COPY_FILE_TO_FILE(json_dir);
+    if (json_str == NULL) return;
 
     double start_time = GET_TIME_IN_MS();
     for (size_t i = 0; i < parse_cnt; i++) {
-        roots[i] = flJson_ParseWithLength(json_str, json_file_len);
+        roots[i] = flJson_Parse(json_str);
     }
     double end_time = GET_TIME_IN_MS();
 
-    PRINT_SPEED_RESULT(end_time - start_time, json_file_len, parse_cnt, json_dir);
+    PRINT_SPEED_RESULT(end_time - start_time, strlen(json_str), parse_cnt, json_dir, "Parse");
 
     /* 清理资源 */
-    fclose(json_file);
     for (size_t i = 0; i < parse_cnt; i++) {
         flJson_UnRef(roots[i]);
     }
     free(json_str);
+
+    FLJSON_SPEEDTEST_PARSE_CNT++;
+}
+
+
+/* 测试序列化速度, 路径必须是基于test/speed目录下的, dump_cnt是需要解析的次数 */
+void FLJSON_SPEEDTEST_DUMP(const char* json_dir, size_t dump_cnt) {
+
+    /* 解析json字符串 */
+    char* strings[dump_cnt];     // 为了只测试序列化速度而不加入释放所占据的时间
+    char* json_str = COPY_FILE_TO_FILE(json_dir);
+    flJson* json = flJson_Parse(json_str);
+    if (json_str == NULL) return;
+
+    double start_time = GET_TIME_IN_MS();
+    for (size_t i = 0; i < dump_cnt; i++) {
+        strings[i] = flJson_Dump(json);
+    }
+    double end_time = GET_TIME_IN_MS();
+
+    PRINT_SPEED_RESULT(end_time - start_time, strlen(json_str), dump_cnt, json_dir, "Dump");
+
+    /* 清理资源 */
+    free(json_str);
+    for (size_t i = 0; i < dump_cnt; i++) {
+        free(strings[i]);
+    }
+    flJson_UnRef(json);
+
+    FLJSON_SPEEDTEST_DUMP_CNT++;
 }

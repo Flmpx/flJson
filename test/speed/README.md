@@ -6,7 +6,7 @@
 
 ## 介绍
 
-这个测试旨在测试在大型json文本面前, 该解析器的解析能力如何  
+这个测试旨在测试在大型json文本面前, 该解析器的解析和序列化能力如何  
   
 但测试之前必须保证json文本是正确的且不可以嵌套过深, 否则会导致提前退出解析, 导致速度偏大  
 
@@ -16,15 +16,16 @@
 
 ### 规则
 
-该测试以函数为单位, 函数的命令规则是 `SPEEDTEST_PARSE_FROM_{content}`, **content**是指json文件或者这个测试的来源(可以是任何东西); 函数必须是静态函数, 即在函数前面加上 `static` 关键字  
+该测试以函数为单位, 函数的命令规则是 `SPEEDTEST_PARSE_FROM_{content}` 以及 `SPEEDTEST_DUMP_FROM_{content}`, **content**是指json文件或者这个测试的来源(可以是任何东西); 函数必须是静态函数, 即在函数前面加上 `static` 关键字  
 最后在 `main` 函数中加上新单元测试即可  
 #### 提供的工具函数
 
 | 函数原型 | 参数解释 | 功能 | 返回值解释 |
 | --- | --- | --- | --- |
-| `void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt)` | `json_dir` : json的路径(必须基于 `test/speed/` ) | 用于测试解析(Parse)速度的函数 | 无 |
+| `void FLJSON_SPEEDTEST_PARSE(const char* json_dir, size_t parse_cnt)` | `json_dir` : json的路径(必须基于 `test/speed/` ) | 先复制文件到字符串, 然后多次进行解析(Parse), 最终得到其速度的函数 | 无 |
 | | `parse_cnt` : 解析的次数, 如果文件比较小, 解析多次以保证数据可信 | | |
-
+| `void FLJSON_SPEEDTEST_DUMP(const char* json_dir, size_t dump_cnt)` | `json_dir` : json的路径(必须基于 `test/speed/`) | 先将文件复制到字符串, 然后解析成json树, 再多次进行序列化(Dump), 最终得到其速度的函数 | 无 | 
+| | `dump_cnt` : 序列化的次数, 如果文件比较小, 多次序列化以保证数据可信 | | |
 
 #### 例子
 
@@ -38,9 +39,26 @@ static void SPEEDTEST_PARSE_FROM_me() {
     FLJSON_SPEEDTEST_PARSE(json_dir, 1000);    
 } 
 
+static void SPEEDTEST_DUMP_FROM_me() {
+    /* 基于test/speed/路径来说, json的路径就是me/me.json */
+    const char* json_dir = "me/me.json";
+    FLJSON_SPEEDTEST_DUMP(json_dir, 1000);    
+} 
+
+
 int main() 
 {
-    SPEEDTEST_PARSE_FROM_me();
+    /* 解析测试 */
+    {
+        SPEEDTEST_PARSE_FROM_me();
+
+    }
+
+    /* 序列化测试 */
+    {
+        SPEEDTEST_DUMP_FROM_me();
+
+    }
 
     /* main函数的其他内容... */
 }
