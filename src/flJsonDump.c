@@ -130,26 +130,31 @@ static flRet flJsonObject_Dump_(hm_str* out, flJson* jo, int depth) {
         return flRet_Error;
     }
 
-    flJsonObjectIter it;
-    flJsonObjectIter_Init(&it, jo);
+    hm_map_iter iter = {
+        .buckets = jo->valObject_.entrys_,
+        .buckets_status = (hm_map_entry_status*)jo->valObject_.status_,
+        .index = 0,
+        .len = jo->valObject_.cap_
+    };
 
     size_t i = 0;
-    size_t size = flJsonObject_Size(jo);
+    size_t size = jo->valObject_.size_;
 
-    while (flJsonObjectIter_HasCur(&it)) {
+    while (hm_map_iter_has_cur(&iter)) {
+        hm_map_entry e = hm_map_iter_cur(&iter);
 
         /* key */
-        if (dumpStr_(out, flJsonObjectIter_CurKey(&it)) != flRet_Suc) {
+        if (dumpStr_(out, e.key) != flRet_Suc) {
             return flRet_Error;
-        }
-        
+        } 
+
         /* : */
         if (hm_str_append_ch(out, ':') != hm_str_ret_suc) {
             return flRet_Error;
         }
 
         /* json */
-        if (flJson_Dump_(out, flJsonObjectIter_CurVal(&it), depth) != flRet_Suc) {
+        if (flJson_Dump_(out, e.val, depth) != flRet_Suc) {
             return flRet_Error;
         }
 
@@ -159,7 +164,7 @@ static flRet flJsonObject_Dump_(hm_str* out, flJson* jo, int depth) {
         }
         
         i++;
-        flJsonObjectIter_MoveNext(&it);
+        hm_map_iter_move_next(&iter);
     }
 
     if (hm_str_append_ch(out, '}') != hm_str_ret_suc) {
@@ -179,16 +184,13 @@ static flRet flJsonArray_Dump_(hm_str* out, flJson* ja, int depth) {
         return flRet_Error;
     }
 
-    flJsonArrayIter it;
-    flJsonArrayIter_Init(&it, ja);
+    size_t size = ja->valArray_.size_;
+    flJson** vals = (flJson**)ja->valArray_.array_;
 
-    size_t i = 0;
-    size_t size = flJsonArray_Size(ja);
-
-    while (flJsonArrayIter_HasCur(&it)) {
-
+    for (size_t i = 0; i < size; i++) {
+        
         /* json */
-        if (flJson_Dump_(out, flJsonArrayIter_Cur(&it), depth)) {
+        if (flJson_Dump_(out, vals[i], depth)) {
             return flRet_Error;
         }
 
@@ -196,9 +198,6 @@ static flRet flJsonArray_Dump_(hm_str* out, flJson* ja, int depth) {
         if (i != size - 1 && hm_str_append_ch(out, ',') != hm_str_ret_suc) {
             return flRet_Error;
         }
-
-        i++;
-        flJsonArrayIter_MoveNext(&it);
     }
 
     if (hm_str_append_ch(out, ']') != hm_str_ret_suc) {
