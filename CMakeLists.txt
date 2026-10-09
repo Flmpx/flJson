@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.28.3)
 
 project(flJson)
 
-option(FLJONS_USE_SSH_FOR_GIT OFF)
+option(FLJSON_USE_SSH_FOR_GIT OFF)
 
-if (FLJONS_USE_SSH_FOR_GIT)
+if (FLJSON_USE_SSH_FOR_GIT)
     set(FLJSON_DEPEND_LINK "git@github.com:Flmpx/hmfocx.git")
 else()
     set(FLJSON_DEPEND_LINK "https://github.com/Flmpx/hmfocx.git")

@@ -129,7 +129,7 @@ include(FetchContent)
 FetchContent_Declare(
     flJson
     GIT_REPOSITORY https://github.com/Flmpx/flJson.git  # or git@github.com:Flmpx/flJson.git
-    GIT_TAG v0.2.0
+    GIT_TAG v0.2.1
 )
 
 FetchContent_MakeAvailable(flJson)
@@ -149,7 +149,7 @@ mkdir build
 cd build
 
 # CMake构建
-cmake ..        # 如果要使用ssh进行拉取flJson所依赖的库, 开启选项 FLJONS_USE_SSH_FOR_GIT
+cmake ..        # 如果要使用ssh进行拉取flJson所依赖的库, 开启选项 FLJSON_USE_SSH_FOR_GIT
 
 # 执行Makefile文件
 make
